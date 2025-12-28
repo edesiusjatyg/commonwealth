@@ -56,7 +56,7 @@ class SentimentResponse(BaseModel):
     summary: str = Field(
         ...,
         min_length=1,
-        max_length=500,
+        max_length=9000,
         description="Human-readable summary of market discussion"
     )
     cited_sources: List[SourceCitation] = Field(

@@ -69,7 +69,7 @@ async def analyze_sentiment(request: SentimentRequest) -> SentimentResponse:
             gemini_result = await gemini_client.reason_about_sentiment(
                 token=request.token,
                 sentiment_data=sentiment_result,
-                sample_texts=sentiment_result.get("top_samples", [])
+                sample_texts=sentiment_result.get("all_texts", [])  # Use ALL texts
             )
             logger.info("Gemini summary generated")
         except Exception as e:

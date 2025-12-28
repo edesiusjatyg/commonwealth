@@ -10,15 +10,15 @@ This service fetches public crypto-related content from DuckDuckGo, analyzes sen
 
 ## Features
 
-- ✅ Fetches data from DuckDuckGo Search
-- ✅ Sentiment analysis using VADER (Valence Aware Dictionary and sEntiment Reasoner)
-- ✅ AI-powered summaries using Google Gemini 2.5 Flash
-- ✅ Returns cited sources with titles and URLs
-- ✅ Read-only, non-agentic architecture (no autonomous loops)
-- ✅ Structured JSON responses
-- ✅ Type-safe with Pydantic validation
-- ✅ Comprehensive error handling and logging
-- ✅ Docker support
+- Fetches data from DuckDuckGo Search
+- Sentiment analysis using VADER (Valence Aware Dictionary and sEntiment Reasoner)
+- AI-powered summaries using Google Gemini 2.5 Flash
+- Returns cited sources with titles and URLs
+- Read-only, non-agentic architecture (no autonomous loops)
+- Structured JSON responses
+- Type-safe with Pydantic validation
+- Comprehensive error handling and logging
+- Docker support
 
 ## Architecture
 
@@ -199,11 +199,11 @@ The service respects rate limits from:
 
 ## Security
 
-- ✅ No hardcoded secrets
-- ✅ Environment variables via `.env` file
-- ✅ `.env` is gitignored
-- ✅ No user data storage
-- ✅ Read-only operations
+- No hardcoded secrets
+- Environment variables via `.env` file
+- `.env` is gitignored
+- No user data storage
+- Read-only operations
 
 ## Troubleshooting
 

@@ -70,8 +70,39 @@ class GeminiClient:
             # Build structured input
             user_input = self._build_input(token, sentiment_data, sample_texts)
             
-            # Combine system prompt and user input
-            full_prompt = f"{system_prompt}\n\n{user_input}"
+            # Add output format reminder before the input
+            format_reminder = """OUTPUT FORMAT (STRICT)
+
+- plain text, no formating, no emojis
+- 300–500 words
+- Describes what people are talking about
+- Explains why sentiment exists
+- Compares narratives across sources
+- Highlights uncertainty where present
+- Uses neutral language such as:
+  - "sources discuss"
+  - "several articles highlight"
+  - "some reports contrast this view by noting"
+
+points_of_divergence:
+- Where sources disagree or emphasize different risks or opportunities
+- Example: "Some sources frame staking growth as sustainable, while others question long-term validator incentives."
+
+FINAL CHECK BEFORE OUTPUT
+
+Before responding, ensure:
+- No advice is given
+- No predictions are made
+- Output is plain text, no formating, no emojis
+- Content is grounded entirely in provided sources
+- The result helps a knowledgeable user understand the discourse, not hype
+- Follows your system prompt
+
+---
+"""
+            
+            # Combine system prompt, format reminder, and user input
+            full_prompt = f"{system_prompt}\n\n{format_reminder}\n{user_input}"
             
             # Generate response
             logger.info("Sending request to Gemini API")
@@ -83,9 +114,11 @@ class GeminiClient:
             # Use the response text as summary directly
             summary = response.text.strip()
             
-            # Truncate if too long
-            if len(summary) > 500:
-                summary = summary[:497] + "..."
+            # Remove any markdown or code blocks if present
+            if summary.startswith("```"):
+                lines = summary.split("\n")
+                summary = "\n".join(lines[1:-1]).strip()
+            
             
             result = {
                 "sentiment": sentiment,
@@ -122,7 +155,7 @@ You will receive:
 3. Sample texts from web sources
 
 Your task:
-Write a concise summary (max 200 words) explaining what people are discussing about this cryptocurrency.
+Write a concise summary (max 500 words) explaining what people are discussing about this cryptocurrency.
 
 Focus on:
 - Key themes and topics
@@ -130,6 +163,8 @@ Focus on:
 - Any notable concerns
 
 Do NOT predict prices or give investment advice.
+Do NOT mentioned sentiment counts
+Do NOT mentioned sample text from web sources as in technically, but you can use that sample text as a point to emphasized on your point
 Output ONLY the summary text, nothing else."""
     
     @staticmethod
@@ -193,7 +228,7 @@ Output ONLY the summary text, nothing else."""
                     "text": item["text"],
                     "label": item["label"]
                 }
-                for item in sample_texts[:8]  # Limit samples to reduce tokens
+                for item in sample_texts  # Use ALL samples, not just 8
             ]
         }
         

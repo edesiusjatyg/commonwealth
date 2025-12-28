@@ -97,6 +97,7 @@ class SentimentEngine:
             },
             "confidence": round(confidence, 2),
             "top_samples": top_samples,
+            "all_texts": scored_texts,  # Include ALL scored texts for Gemini
             "avg_compound_score": round(avg_compound, 3)
         }
         

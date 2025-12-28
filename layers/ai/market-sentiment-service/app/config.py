@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     # Gemini settings
     gemini_model: str = "gemini-2.5-flash"
     gemini_temperature: float = 0.3
-    gemini_max_tokens: int = 1024
+    gemini_max_tokens: int = 4096  # Increased for 300-500 word responses
     
     class Config:
         env_file = ".env"

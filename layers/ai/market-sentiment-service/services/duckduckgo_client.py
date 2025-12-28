@@ -68,19 +68,33 @@ class DuckDuckGoClient:
             organic_results = data.get("organic_results", [])
             
             for result in organic_results[:max_results]:
-                # Combine title and snippet
+                # Get all available text fields for more context
                 title = result.get("title", "")
                 snippet = result.get("snippet", "")
                 url = result.get("link", "")
                 
-                if title or snippet:
-                    combined_text = f"{title}. {snippet}".strip()
-                    if combined_text:
-                        texts.append(combined_text)
-                        sources.append({
-                            "title": title,
-                            "url": url
-                        })
+                # Also try to get additional context if available
+                description = result.get("description", "")
+                displayed_link = result.get("displayed_link", "")
+                
+                # Combine all text for richer context
+                # Use snippet and description if both are available
+                text_parts = [title]
+                
+                if snippet:
+                    text_parts.append(snippet)
+                
+                if description and description != snippet:
+                    text_parts.append(description)
+                
+                combined_text = " ".join(text_parts).strip()
+                
+                if combined_text:
+                    texts.append(combined_text)
+                    sources.append({
+                        "title": title if title else displayed_link,
+                        "url": url
+                    })
             
             logger.info(f"Fetched {len(texts)} search results for {token}")
             return texts, sources
