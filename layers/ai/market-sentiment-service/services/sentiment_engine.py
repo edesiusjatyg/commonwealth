@@ -19,16 +19,6 @@ class SentimentEngine:
     def analyze(self, texts: List[str]) -> Dict[str, Any]:
         """
         Analyze sentiment of a collection of texts.
-        
-        Args:
-            texts: List of text strings to analyze
-            
-        Returns:
-            Dictionary containing:
-                - sentiment_counts: Dict with positive, neutral, negative counts
-                - confidence: Float between 0.0 and 1.0
-                - top_samples: List of representative text samples
-                - avg_compound_score: Average compound sentiment score
         """
         if not texts:
             logger.warning("No texts provided for sentiment analysis")
@@ -36,26 +26,26 @@ class SentimentEngine:
                 "sentiment_counts": {"positive": 0, "neutral": 0, "negative": 0},
                 "confidence": 0.0,
                 "top_samples": [],
-                "avg_compound_score": 0.0
+                "avg_compound_score": 0.0,
+                "all_texts": [] 
             }
         
         # Deduplicate texts
         unique_texts = list(set(texts))
-        logger.info(f"Analyzing {len(unique_texts)} unique texts (from {len(texts)} total)")
+        logger.info(f"Analyzing {len(unique_texts)} unique texts")
         
-        # Analyze each text
         sentiment_scores = []
         sentiment_labels = []
         scored_texts = []
         
         for text in unique_texts:
-            if not text or len(text.strip()) < 10:  # Skip very short texts
+            if not text or len(text.strip()) < 10:
                 continue
             
             scores = self.analyzer.polarity_scores(text)
             compound = scores["compound"]
             
-            # Classify sentiment based on compound score
+            # Classify sentiment
             if compound >= 0.05:
                 label = "positive"
             elif compound <= -0.05:
@@ -65,8 +55,12 @@ class SentimentEngine:
             
             sentiment_scores.append(compound)
             sentiment_labels.append(label)
+            
+            # --- FIX: REMOVED TRUNCATION HERE ---
+            # Gemini needs the full text to reason correctly.
+            # Do NOT use text[:200] here.
             scored_texts.append({
-                "text": text[:200],  # Truncate for storage
+                "text": text,  
                 "score": compound,
                 "label": label
             })
@@ -75,8 +69,7 @@ class SentimentEngine:
         sentiment_counts = Counter(sentiment_labels)
         total_count = len(sentiment_labels)
         
-        # Calculate confidence based on distribution
-        # Higher confidence when one sentiment dominates
+        # Calculate confidence
         if total_count > 0:
             max_count = max(sentiment_counts.values())
             confidence = max_count / total_count
@@ -86,8 +79,11 @@ class SentimentEngine:
         # Calculate average compound score
         avg_compound = sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0.0
         
-        # Select top representative samples (mix of positive, neutral, negative)
+        # Select top representative samples
         top_samples = self._select_representative_samples(scored_texts, max_samples=10)
+        
+        # OPTIONAL: If you want to truncate top_samples for the frontend, do it here
+        # But for 'all_texts', we preserve the full content for Gemini
         
         result = {
             "sentiment_counts": {
@@ -97,7 +93,7 @@ class SentimentEngine:
             },
             "confidence": round(confidence, 2),
             "top_samples": top_samples,
-            "all_texts": scored_texts,  # Include ALL scored texts for Gemini
+            "all_texts": scored_texts,  # This now contains FULL summaries for Gemini
             "avg_compound_score": round(avg_compound, 3)
         }
         
@@ -111,13 +107,6 @@ class SentimentEngine:
     ) -> List[Dict[str, Any]]:
         """
         Select representative text samples from each sentiment category.
-        
-        Args:
-            scored_texts: List of texts with scores and labels
-            max_samples: Maximum number of samples to return
-            
-        Returns:
-            List of representative samples
         """
         # Group by sentiment label
         by_label = {"positive": [], "neutral": [], "negative": []}

@@ -1,6 +1,19 @@
 # Environment variables
 .env
 
+# Cache database and query script
+cache.db
+cache.db.backup
+cache.db-*
+query_cache.sh
+services/cache_manager.py.bak
+
+# PostgreSQL data (managed by Docker)
+pgdata/
+
+# Dependency tracking
+.venv/.deps_installed
+
 # Python
 __pycache__/
 *.py[cod]
@@ -41,3 +54,7 @@ env/
 # OS
 .DS_Store
 Thumbs.db
+
+# Cache and dev scripts
+cache.db
+query_cache.sh

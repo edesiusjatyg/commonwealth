@@ -16,7 +16,7 @@ class SentimentRequest(BaseModel):
     )
     timeframe: str = Field(
         ...,
-        description="Timeframe for analysis (e.g., 1d, 7d, 30d)"
+        description="Timeframe for analysis (1d, 7d, 30d, 365d)"
     )
     
     @validator("token")
@@ -27,7 +27,7 @@ class SentimentRequest(BaseModel):
     @validator("timeframe")
     def validate_timeframe(cls, v: str) -> str:
         """Validate timeframe format."""
-        valid_timeframes = ["1d", "7d", "14d", "30d"]
+        valid_timeframes = ["1d", "7d", "30d", "365d"]
         if v not in valid_timeframes:
             raise ValueError(f"Timeframe must be one of: {', '.join(valid_timeframes)}")
         return v
@@ -38,6 +38,7 @@ class SourceCitation(BaseModel):
     
     title: str = Field(..., description="Title of the source")
     url: str = Field(..., description="URL of the source")
+    date: str = Field(default="Unknown", description="Publication date if available")
 
 
 class SentimentResponse(BaseModel):
