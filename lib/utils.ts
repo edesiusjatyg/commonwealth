@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs));
 }
 
-export function delayedValue<T>(value: T, delay: number): Promise<T> {
+export function delayedValue<T>(value: T, delay: number = 1000): Promise<T> {
 	return new Promise((resolve) => {
 		setTimeout(() => {
 			resolve(value);
@@ -35,4 +35,11 @@ export const formatBalance = (
 		style: options?.withoutCurrencySymbol ? "decimal" : "currency",
 		currency: "IDR",
 	});
+};
+
+export const truncateText = (text: string, maxLength: number) => {
+	if (text.length <= maxLength) {
+		return text;
+	}
+	return `${text.slice(0, maxLength)}...`;
 };
