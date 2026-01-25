@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: user-insights-postgres
+    environment:
+      POSTGRES_DB: user_insights
+      POSTGRES_USER: insights_user
+      POSTGRES_PASSWORD: insights_pass
+    ports:
+      - "5433:5432"
+    volumes:
+      - insights_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U insights_user -d user_insights"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    container_name: user-insights-api
+    ports:
+      - "8001:8001"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: user_insights
+      POSTGRES_USER: insights_user
+      POSTGRES_PASSWORD: insights_pass
+      MARKET_SENTIMENT_SERVICE_URL: http://host.docker.internal:8000
+      DEBUG: "False"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - .:/app
+
+volumes:
+  insights_data:
