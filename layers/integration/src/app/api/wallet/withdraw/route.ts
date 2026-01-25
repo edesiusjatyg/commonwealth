@@ -8,11 +8,13 @@ const withdrawSchema = z.object({
     amount: z.number().positive('Amount must be positive'),
     category: z.string().min(1, 'Category/Tag is required'),
     password: z.string().optional(),
+    description: z.string().optional(),
 });
 
 export async function POST(request: Request): Promise<NextResponse<WalletResponse>> {
     // Check if wallet exists
     // Check for positive amount
+    // Check if category is valid
     // Check if balance is sufficient
     // Check if daily limit is exceeded (If hits 80% of daily limit, send alert)
     // Check if password is correct
@@ -31,7 +33,7 @@ export async function POST(request: Request): Promise<NextResponse<WalletRespons
             );
         }
 
-        const { walletId, amount, category, password } = validatedData.data;
+        const { walletId, amount, category, password, description } = validatedData.data;
 
         const wallet = await prisma.wallet.findUnique({
             where: { id: walletId },
@@ -85,7 +87,7 @@ export async function POST(request: Request): Promise<NextResponse<WalletRespons
                 type: 'WITHDRAWAL',
                 amount,
                 category,
-                description: `Withdrawal to bank`,
+                description,
             },
         });
 
