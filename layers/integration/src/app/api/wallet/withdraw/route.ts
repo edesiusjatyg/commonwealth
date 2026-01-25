@@ -1,29 +1,38 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { WalletResponse } from '@/types';
 
 const withdrawSchema = z.object({
     walletId: z.string(),
     amount: z.number().positive('Amount must be positive'),
     category: z.string().min(1, 'Category/Tag is required'),
-    password: z.string().optional(), // OTP or Password for verification
+    password: z.string().optional(),
 });
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse<WalletResponse>> {
+    // Check if wallet exists
+    // Check for positive amount
+    // Check if balance is sufficient
+    // Check if daily limit is exceeded (If hits 80% of daily limit, send alert)
+    // Check if password is correct
+    // Create withdrawal transaction
+    // Send notification
+    // Return success response
+
     try {
         const body = await request.json();
         const validatedData = withdrawSchema.safeParse(body);
 
         if (!validatedData.success) {
             return NextResponse.json(
-                { error: validatedData.error.errors[0].message },
+                { error: validatedData.error.errors[0].message, message: 'Validation failed' },
                 { status: 400 }
             );
         }
 
         const { walletId, amount, category, password } = validatedData.data;
 
-        // Fetch wallet and calculate balance & spending
         const wallet = await prisma.wallet.findUnique({
             where: { id: walletId },
             include: {
@@ -33,10 +42,9 @@ export async function POST(request: Request) {
         });
 
         if (!wallet) {
-            return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Wallet not found', message: 'Withdrawal failed' }, { status: 404 });
         }
 
-        // Calculate Balance
         const totalDeposits = wallet.transactions
             .filter(t => t.type === 'DEPOSIT' || t.type === 'YIELD')
             .reduce((sum, t) => sum + Number(t.amount), 0);
@@ -46,10 +54,9 @@ export async function POST(request: Request) {
         const balance = totalDeposits - totalWithdrawals;
 
         if (amount > balance) {
-            return NextResponse.json({ error: 'Insufficient balance' }, { status: 400 });
+            return NextResponse.json({ error: 'Insufficient balance', message: 'Withdrawal failed' }, { status: 400 });
         }
 
-        // Check Daily Limit
         const spendingLimit = Number(wallet.dailyLimit);
         const alreadySpentToday = Number(wallet.spendingToday);
         const newSpendingToday = alreadySpentToday + amount;
@@ -57,12 +64,10 @@ export async function POST(request: Request) {
         if (spendingLimit > 0 && newSpendingToday > spendingLimit) {
             return NextResponse.json({
                 error: 'Daily limit exceeded. Please request approval from emergency contact.',
-                limit: spendingLimit,
-                spent: alreadySpentToday
+                message: 'Withdrawal failed'
             }, { status: 403 });
         }
 
-        // Daily Limit Alert (80%)
         if (spendingLimit > 0 && newSpendingToday >= spendingLimit * 0.8 && alreadySpentToday < spendingLimit * 0.8) {
             await prisma.notification.create({
                 data: {
@@ -74,7 +79,6 @@ export async function POST(request: Request) {
             });
         }
 
-        // Create Transaction
         const transaction = await prisma.transaction.create({
             data: {
                 walletId,
@@ -85,13 +89,11 @@ export async function POST(request: Request) {
             },
         });
 
-        // Update Wallet Spending Today
         await prisma.wallet.update({
             where: { id: walletId },
             data: { spendingToday: newSpendingToday },
         });
 
-        // Send success notification
         await prisma.notification.create({
             data: {
                 userId: wallet.userId,
@@ -103,14 +105,13 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             message: 'Withdrawal successful',
-            transactionId: transaction.id,
-            newBalance: balance - amount,
+            walletId: wallet.id,
         });
 
     } catch (error: any) {
         console.error('Withdrawal error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: 'Internal server error', message: 'System error' },
             { status: 500 }
         );
     }

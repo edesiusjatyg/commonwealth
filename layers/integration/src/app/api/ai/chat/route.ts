@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
+import { ChatResponse } from '@/types';
 
-export async function POST(request: Request) {
+// Ini kayaknya ga dipake, tergantung ada fitur chatbot atau tidak
+
+export async function POST(request: Request): Promise<NextResponse<ChatResponse>> {
     try {
         const body = await request.json();
         const { message } = body;
@@ -16,6 +19,6 @@ export async function POST(request: Request) {
             ]
         });
     } catch (error: any) {
-        return NextResponse.json({ error: 'Chat service unavailable' }, { status: 500 });
+        return NextResponse.json({ error: 'Chat service unavailable', reply: '' }, { status: 500 });
     }
 }

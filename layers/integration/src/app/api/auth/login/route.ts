@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import { AuthResponse } from '@/types';
 
 const loginSchema = z.object({
     email: z.string().email().optional(),
@@ -11,14 +12,14 @@ const loginSchema = z.object({
     message: "Either email/password or Base Social ID must be provided",
 });
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse<AuthResponse>> {
     try {
         const body = await request.json();
         const validatedData = loginSchema.safeParse(body);
 
         if (!validatedData.success) {
             return NextResponse.json(
-                { error: validatedData.error.errors[0].message },
+                { error: validatedData.error.errors[0].message, message: 'Validation failed' },
                 { status: 400 }
             );
         }
@@ -48,12 +49,12 @@ export async function POST(request: Request) {
 
         if (!user) {
             return NextResponse.json(
-                { error: 'Invalid credentials' },
+                { error: 'Invalid credentials', message: 'Login failed' },
                 { status: 401 }
             );
         }
 
-        // In a real app, you would set a cookie/token here
+        // Set cookie/token here okok
         return NextResponse.json({
             message: 'Login successful',
             userId: user.id,
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
     } catch (error: any) {
         console.error('Login error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: 'Internal server error', message: 'System error' },
             { status: 500 }
         );
     }

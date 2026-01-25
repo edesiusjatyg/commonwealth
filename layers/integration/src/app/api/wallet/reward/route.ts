@@ -1,19 +1,26 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { WalletResponse } from '@/types';
 
 const rewardSchema = z.object({
     walletId: z.string(),
     amount: z.number().positive(),
 });
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse<WalletResponse>> {
+    // Check if wallet exists
+    // Check if amount is positive - wip
+    // Create yield transaction
+    // Send notification
+    // Return success response
+
     try {
         const body = await request.json();
         const validatedData = rewardSchema.safeParse(body);
 
         if (!validatedData.success) {
-            return NextResponse.json({ error: validatedData.error.errors[0].message }, { status: 400 });
+            return NextResponse.json({ error: validatedData.error.errors[0].message, message: 'Validation failed' }, { status: 400 });
         }
 
         const { walletId, amount } = validatedData.data;
@@ -22,9 +29,8 @@ export async function POST(request: Request) {
             where: { id: walletId },
         });
 
-        if (!wallet) return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
+        if (!wallet) return NextResponse.json({ error: 'Wallet not found', message: 'Reward processing failed' }, { status: 404 });
 
-        // Create Yield Transaction
         await prisma.transaction.create({
             data: {
                 walletId,
@@ -35,7 +41,6 @@ export async function POST(request: Request) {
             },
         });
 
-        // Send Notification
         await prisma.notification.create({
             data: {
                 userId: wallet.userId,
@@ -45,10 +50,10 @@ export async function POST(request: Request) {
             },
         });
 
-        return NextResponse.json({ message: 'Reward processed successfully', amount });
+        return NextResponse.json({ message: 'Reward processed successfully', walletId: wallet.id });
 
     } catch (error: any) {
         console.error('Reward error:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: 'Internal server error', message: 'System error' }, { status: 500 });
     }
 }

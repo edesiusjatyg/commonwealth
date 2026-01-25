@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { BalanceResponse, TransactionRecord } from '@/types';
 
-export async function GET(request: Request) {
+export async function GET(request: Request): Promise<NextResponse<BalanceResponse>> {
     try {
         const { searchParams } = new URL(request.url);
         const walletId = searchParams.get('walletId');
 
         if (!walletId) {
-            return NextResponse.json({ error: 'Wallet ID is required' }, { status: 400 });
+            return NextResponse.json({ error: 'Wallet ID is required', balance: 0, history: [], totalDeposits: 0, totalWithdrawals: 0 }, { status: 400 });
         }
 
         const transactions = await prisma.transaction.findMany({
@@ -15,7 +16,6 @@ export async function GET(request: Request) {
             orderBy: { createdAt: 'desc' },
         });
 
-        // Calculate Summary stats
         const totalDeposits = transactions
             .filter(t => t.type === 'DEPOSIT' || t.type === 'YIELD')
             .reduce((sum, t) => sum + Number(t.amount), 0);
@@ -23,9 +23,19 @@ export async function GET(request: Request) {
             .filter(t => t.type === 'WITHDRAWAL')
             .reduce((sum, t) => sum + Number(t.amount), 0);
 
+        const history: TransactionRecord[] = transactions.map(t => ({
+            id: t.id,
+            walletId: t.walletId,
+            type: t.type,
+            amount: Number(t.amount),
+            category: t.category,
+            description: t.description,
+            createdAt: t.createdAt,
+        }));
+
         return NextResponse.json({
             balance: totalDeposits - totalWithdrawals,
-            history: transactions,
+            history,
             totalDeposits,
             totalWithdrawals
         });
@@ -33,7 +43,7 @@ export async function GET(request: Request) {
     } catch (error: any) {
         console.error('Expenses error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: 'Internal server error', balance: 0, history: [], totalDeposits: 0, totalWithdrawals: 0 },
             { status: 500 }
         );
     }
