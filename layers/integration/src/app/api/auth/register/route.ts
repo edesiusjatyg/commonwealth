@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { AuthResponse } from '@/types';
 
 const registerSchema = z.object({
     email: z.string().email('Invalid email format'),
@@ -9,33 +10,37 @@ const registerSchema = z.object({
     baseSocialId: z.string().optional(),
 });
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse<AuthResponse>> {
+    // Check if email already exists
+    // Check if baseSocialId already exists
+    // Hash password
+    // Create user
+    // Return success response
+
     try {
         const body = await request.json();
         const validatedData = registerSchema.safeParse(body);
 
         if (!validatedData.success) {
             return NextResponse.json(
-                { error: validatedData.error.errors[0].message },
+                { error: validatedData.error.errors[0].message, message: 'Validation failed' },
                 { status: 400 }
             );
         }
 
         const { email, password, baseSocialId } = validatedData.data;
 
-        // Check if email already exists
         const existingUser = await prisma.user.findUnique({
             where: { email },
         });
 
         if (existingUser) {
             return NextResponse.json(
-                { error: 'Email already registered' },
+                { error: 'Email already registered', message: 'Registration failed' },
                 { status: 400 }
             );
         }
 
-        // Check if baseSocialId already exists
         if (baseSocialId) {
             const existingSocialUser = await prisma.user.findUnique({
                 where: { baseSocialId },
@@ -43,7 +48,7 @@ export async function POST(request: Request) {
 
             if (existingSocialUser) {
                 return NextResponse.json(
-                    { error: 'Social account already registered' },
+                    { error: 'Social account already registered', message: 'Registration failed' },
                     { status: 400 }
                 );
             }
@@ -66,7 +71,7 @@ export async function POST(request: Request) {
     } catch (error: any) {
         console.error('Registration error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: 'Internal server error', message: 'System error' },
             { status: 500 }
         );
     }

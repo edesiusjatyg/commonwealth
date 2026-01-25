@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
+import { AuthResponse } from '@/types';
 
-export async function POST() {
-    // In a real app with cookies, you would clear them here
+// WIP
+
+export async function POST(): Promise<NextResponse<AuthResponse>> {
     return NextResponse.json({ message: 'Logout successful' });
 }

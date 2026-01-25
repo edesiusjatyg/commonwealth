@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
+import { SentimentResponse } from '@/types';
 
 const SENTIMENT_SERVICE_URL = process.env.MARKET_SENTIMENT_SERVICE_URL || 'http://localhost:8000';
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse<SentimentResponse>> {
     try {
         const body = await request.json();
         const { token, timeframe } = body;
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
     } catch (error: any) {
         console.error('AI Sentiment proxy error:', error.message);
         return NextResponse.json(
-            { error: 'Market Sentiment Service unreachable' },
+            { error: 'Market Sentiment Service unreachable' } as any,
             { status: 502 }
         );
     }

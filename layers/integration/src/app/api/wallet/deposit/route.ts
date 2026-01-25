@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { WalletResponse } from '@/types';
 
 const depositSchema = z.object({
     walletId: z.string(),
@@ -8,31 +9,37 @@ const depositSchema = z.object({
     category: z.string().min(1, 'Category/Tag is required'),
 });
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse<WalletResponse>> {
+    // Check if wallet exists
+    // Check if user exists - wip
+    // Check if amount is positive - wip
+    // Check if category is valid - wip
+    // Create transaction record
+    // Send notification
+    // Return success response
+
     try {
         const body = await request.json();
         const validatedData = depositSchema.safeParse(body);
 
         if (!validatedData.success) {
             return NextResponse.json(
-                { error: validatedData.error.errors[0].message },
+                { error: validatedData.error.errors[0].message, message: 'Validation failed' },
                 { status: 400 }
             );
         }
 
         const { walletId, amount, category } = validatedData.data;
 
-        // Check if wallet exists
         const wallet = await prisma.wallet.findUnique({
             where: { id: walletId },
             include: { user: true },
         });
 
         if (!wallet) {
-            return NextResponse.json({ error: 'Wallet not found' }, { status: 404 });
+            return NextResponse.json({ error: 'Wallet not found', message: 'Deposit failed' }, { status: 404 });
         }
 
-        // Create transaction record
         const transaction = await prisma.transaction.create({
             data: {
                 walletId,
@@ -43,7 +50,6 @@ export async function POST(request: Request) {
             },
         });
 
-        // Send notification
         await prisma.notification.create({
             data: {
                 userId: wallet.userId,
@@ -55,14 +61,13 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             message: 'Deposit successful',
-            transactionId: transaction.id,
-            amount: transaction.amount,
+            walletId: wallet.id,
         });
 
     } catch (error: any) {
         console.error('Deposit error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: 'Internal server error', message: 'System error' },
             { status: 500 }
         );
     }

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { WalletResponse } from '@/types';
 
 const createWalletSchema = z.object({
     userId: z.string(),
@@ -10,33 +11,36 @@ const createWalletSchema = z.object({
     dailyLimit: z.number().nonnegative().default(0),
 });
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse<WalletResponse>> {
+    // Check if user exists
+    // Check if wallet address already exists
+    // Create wallet
+    // Return success response
+
     try {
         const body = await request.json();
         const validatedData = createWalletSchema.safeParse(body);
 
         if (!validatedData.success) {
             return NextResponse.json(
-                { error: validatedData.error.errors[0].message },
+                { error: validatedData.error.errors[0].message, message: 'Validation failed' },
                 { status: 400 }
             );
         }
 
         const { userId, address, name, emergencyEmail, dailyLimit } = validatedData.data;
 
-        // Check if user exists
         const user = await prisma.user.findUnique({
             where: { id: userId },
         });
 
         if (!user) {
             return NextResponse.json(
-                { error: 'User not found' },
+                { error: 'User not found', message: 'Wallet creation failed' },
                 { status: 404 }
             );
         }
 
-        // Create wallet
         const wallet = await prisma.wallet.create({
             data: {
                 userId,
@@ -47,19 +51,16 @@ export async function POST(request: Request) {
             },
         });
 
-        // Mark user as onboarded
         await prisma.user.update({
             where: { id: userId },
             data: { onboarded: true },
         });
-
-        // Create a first notification
         await prisma.notification.create({
             data: {
                 userId,
                 title: 'Wallet Created',
                 message: `Success! Your wallet "${name}" has been created.`,
-                type: 'DEPOSIT_SUCCESS', // Using this as a general success type for now
+                type: 'DEPOSIT_SUCCESS',
             },
         });
 
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
     } catch (error: any) {
         console.error('Wallet creation error:', error);
         return NextResponse.json(
-            { error: 'Internal server error' },
+            { error: 'Internal server error', message: 'System error' },
             { status: 500 }
         );
     }

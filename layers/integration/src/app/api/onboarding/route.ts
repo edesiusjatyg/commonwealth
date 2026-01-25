@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
+import { OnboardingResponse, OnboardingStep } from '@/types';
 
-export async function GET() {
-    const onboardingSteps = [
+export async function GET(): Promise<NextResponse<OnboardingResponse>> {
+    const onboardingSteps: OnboardingStep[] = [
         {
             id: 1,
             title: "Welcome to Blackwallet",
