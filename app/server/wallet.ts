@@ -1,0 +1,408 @@
+"use server";
+
+import { prisma } from "@/lib/prisma";
+import { WalletResponse } from "@/types";
+import { z } from "zod";
+
+// Input schemas
+const createWalletSchema = z.object({
+	userId: z.string(),
+	address: z.string().startsWith("0x", "Invalid wallet address"),
+	name: z.string().min(1, "Wallet name is required"),
+	emergencyEmail: z.string().email().optional(),
+	dailyLimit: z.number().nonnegative().default(0),
+});
+
+const depositSchema = z.object({
+	walletId: z.string(),
+	amount: z.number().positive("Amount must be positive"),
+	category: z.string().min(1, "Category/Tag is required"),
+});
+
+const withdrawSchema = z.object({
+	walletId: z.string(),
+	amount: z.number().positive("Amount must be positive"),
+	category: z.string().min(1, "Category/Tag is required"),
+	password: z.string().optional(),
+	description: z.string().optional(),
+});
+
+const approvalSchema = z.object({
+	walletId: z.string(),
+	approvalCode: z.string(),
+});
+
+const rewardSchema = z.object({
+	walletId: z.string(),
+	amount: z.number().positive(),
+});
+
+// Input types
+export type CreateWalletInput = z.infer<typeof createWalletSchema>;
+export type DepositInput = z.infer<typeof depositSchema>;
+export type WithdrawInput = z.infer<typeof withdrawSchema>;
+export type ApproveDailyLimitInput = z.infer<typeof approvalSchema>;
+export type ProcessRewardInput = z.infer<typeof rewardSchema>;
+
+/**
+ * Create a new wallet for a user
+ */
+export async function createWallet(
+	input: CreateWalletInput,
+): Promise<WalletResponse> {
+	try {
+		const validatedData = createWalletSchema.safeParse(input);
+
+		if (!validatedData.success) {
+			return {
+				error: z.treeifyError(validatedData.error).errors[0],
+				message: "Validation failed",
+			};
+		}
+
+		const { userId, address, name, emergencyEmail, dailyLimit } =
+			validatedData.data;
+
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+		});
+
+		if (!user) {
+			return {
+				error: "User not found",
+				message: "Wallet creation failed",
+			};
+		}
+
+		const wallet = await prisma.wallet.create({
+			data: {
+				userId,
+				address,
+				name,
+				emergencyEmail,
+				dailyLimit,
+			},
+		});
+
+		await prisma.user.update({
+			where: { id: userId },
+			data: { onboarded: true },
+		});
+
+		await prisma.notification.create({
+			data: {
+				userId,
+				title: "Wallet Created",
+				message: `Success! Your wallet "${name}" has been created.`,
+				type: "DEPOSIT_SUCCESS",
+			},
+		});
+
+		return {
+			message: "Wallet created successfully",
+			walletId: wallet.id,
+			address: wallet.address,
+		};
+	} catch (error: any) {
+		console.error("Wallet creation error:", error);
+		return {
+			error: "Internal server error",
+			message: "System error",
+		};
+	}
+}
+
+/**
+ * Deposit funds to a wallet
+ */
+export async function deposit(input: DepositInput): Promise<WalletResponse> {
+	try {
+		const validatedData = depositSchema.safeParse(input);
+
+		if (!validatedData.success) {
+			return {
+				error: z.treeifyError(validatedData.error).errors[0],
+				message: "Validation failed",
+			};
+		}
+
+		const { walletId, amount, category } = validatedData.data;
+
+		const wallet = await prisma.wallet.findUnique({
+			where: { id: walletId },
+			include: { user: true },
+		});
+
+		if (!wallet) {
+			return {
+				error: "Wallet not found",
+				message: "Deposit failed",
+			};
+		}
+
+		await prisma.transaction.create({
+			data: {
+				walletId,
+				type: "DEPOSIT",
+				amount: amount,
+				category,
+				description: `Deposit to wallet ${wallet.name}`,
+			},
+		});
+
+		await prisma.notification.create({
+			data: {
+				userId: wallet.userId,
+				title: "Deposit Successful",
+				message: `You have successfully deposited USD ${amount} to your wallet.`,
+				type: "DEPOSIT_SUCCESS",
+			},
+		});
+
+		return {
+			message: "Deposit successful",
+			walletId: wallet.id,
+		};
+	} catch (error: any) {
+		console.error("Deposit error:", error);
+		return {
+			error: "Internal server error",
+			message: "System error",
+		};
+	}
+}
+
+/**
+ * Withdraw funds from a wallet
+ */
+export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
+	try {
+		const validatedData = withdrawSchema.safeParse(input);
+
+		if (!validatedData.success) {
+			return {
+				error: z.treeifyError(validatedData.error).errors[0],
+				message: "Validation failed",
+			};
+		}
+
+		const { walletId, amount, category, description } = validatedData.data;
+
+		const wallet = await prisma.wallet.findUnique({
+			where: { id: walletId },
+			include: {
+				transactions: true,
+				user: true,
+			},
+		});
+
+		if (!wallet) {
+			return {
+				error: "Wallet not found",
+				message: "Withdrawal failed",
+			};
+		}
+
+		const totalDeposits = wallet.transactions
+			.filter((t) => t.type === "DEPOSIT" || t.type === "YIELD")
+			.reduce((sum, t) => sum + Number(t.amount), 0);
+		const totalWithdrawals = wallet.transactions
+			.filter((t) => t.type === "WITHDRAWAL")
+			.reduce((sum, t) => sum + Number(t.amount), 0);
+		const balance = totalDeposits - totalWithdrawals;
+
+		if (amount > balance) {
+			return {
+				error: "Insufficient balance",
+				message: "Withdrawal failed",
+			};
+		}
+
+		const spendingLimit = Number(wallet.dailyLimit);
+		const alreadySpentToday = Number(wallet.spendingToday);
+		const newSpendingToday = alreadySpentToday + amount;
+
+		if (spendingLimit > 0 && newSpendingToday > spendingLimit) {
+			return {
+				error:
+					"Daily limit exceeded. Please request approval from emergency contact.",
+				message: "Withdrawal failed",
+			};
+		}
+
+		if (
+			spendingLimit > 0 &&
+			newSpendingToday >= spendingLimit * 0.8 &&
+			alreadySpentToday < spendingLimit * 0.8
+		) {
+			await prisma.notification.create({
+				data: {
+					userId: wallet.userId,
+					title: "Daily Limit Alert",
+					message: `Warning: You have reached 80% of your daily spending limit.`,
+					type: "DAILY_LIMIT_ALERT",
+				},
+			});
+		}
+
+		await prisma.transaction.create({
+			data: {
+				walletId,
+				type: "WITHDRAWAL",
+				amount,
+				category,
+				description,
+			},
+		});
+
+		await prisma.wallet.update({
+			where: { id: walletId },
+			data: { spendingToday: newSpendingToday },
+		});
+
+		await prisma.notification.create({
+			data: {
+				userId: wallet.userId,
+				title: "Withdrawal Successful",
+				message: `You have successfully withdrawn USD ${amount} to your bank account.`,
+				type: "WITHDRAWAL_SUCCESS",
+			},
+		});
+
+		return {
+			message: "Withdrawal successful",
+			walletId: wallet.id,
+		};
+	} catch (error: any) {
+		console.error("Withdrawal error:", error);
+		return {
+			error: "Internal server error",
+			message: "System error",
+		};
+	}
+}
+
+/**
+ * Approve daily limit override with emergency contact code
+ */
+export async function approveDailyLimit(
+	input: ApproveDailyLimitInput,
+): Promise<WalletResponse> {
+	try {
+		const validatedData = approvalSchema.safeParse(input);
+
+		if (!validatedData.success) {
+			return {
+				error: z.treeifyError(validatedData.error).errors[0],
+				message: "Validation failed",
+			};
+		}
+
+		const { walletId, approvalCode } = validatedData.data;
+
+		const wallet = await prisma.wallet.findUnique({
+			where: { id: walletId },
+		});
+
+		if (!wallet) {
+			return {
+				error: "Wallet not found",
+				message: "Approval failed",
+			};
+		}
+
+		if (approvalCode !== "9999") {
+			return {
+				error: "Invalid approval code",
+				message: "Approval failed",
+			};
+		}
+
+		await prisma.wallet.update({
+			where: { id: walletId },
+			data: { dailyLimit: wallet.dailyLimit },
+		});
+
+		await prisma.notification.create({
+			data: {
+				userId: wallet.userId,
+				title: "Daily Limit Override Approved",
+				message:
+					"Your emergency contact has approved your daily limit override. Your limit has been reset for today.",
+				type: "EMERGENCY_APPROVAL",
+			},
+		});
+
+		return {
+			message: "Daily limit override approved",
+			walletId: wallet.id,
+		};
+	} catch (error: any) {
+		console.error("Approval error:", error);
+		return {
+			error: "Internal server error",
+			message: "System error",
+		};
+	}
+}
+
+/**
+ * Process a reward/yield for a wallet
+ */
+export async function processReward(
+	input: ProcessRewardInput,
+): Promise<WalletResponse> {
+	try {
+		const validatedData = rewardSchema.safeParse(input);
+
+		if (!validatedData.success) {
+			return {
+				error: z.treeifyError(validatedData.error).errors[0],
+				message: "Validation failed",
+			};
+		}
+
+		const { walletId, amount } = validatedData.data;
+
+		const wallet = await prisma.wallet.findUnique({
+			where: { id: walletId },
+		});
+
+		if (!wallet) {
+			return {
+				error: "Wallet not found",
+				message: "Reward processing failed",
+			};
+		}
+
+		await prisma.transaction.create({
+			data: {
+				walletId,
+				type: "YIELD",
+				amount,
+				category: "REWARD",
+				description: "Weekly staking reward",
+			},
+		});
+
+		await prisma.notification.create({
+			data: {
+				userId: wallet.userId,
+				title: "Reward Received!",
+				message: `Your wallet just received a weekly yield of USD ${amount}.`,
+				type: "REWARD_RECEIVED",
+			},
+		});
+
+		return {
+			message: "Reward processed successfully",
+			walletId: wallet.id,
+		};
+	} catch (error: any) {
+		console.error("Reward error:", error);
+		return {
+			error: "Internal server error",
+			message: "System error",
+		};
+	}
+}

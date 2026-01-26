@@ -85,6 +85,7 @@ export interface InsightResponse {
 	insight_text: string;
 	confidence: number;
 	metadata?: any;
+	error?: string;
 }
 
 export interface ChatResponse {
@@ -94,6 +95,7 @@ export interface ChatResponse {
 		title: string;
 		data: any;
 	}>;
+	error?: string;
 }
 
 // Notification Types
@@ -109,4 +111,5 @@ export interface NotificationRecord {
 
 export interface NotificationsResponse {
 	notifications: NotificationRecord[];
+	error?: string;
 }
