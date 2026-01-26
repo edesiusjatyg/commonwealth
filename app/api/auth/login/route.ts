@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
-import { z } from 'zod';
 import { AuthResponse } from '@/types';
+import bcrypt from 'bcryptjs';
+import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 const loginSchema = z.object({
     email: z.string().email().optional(),
@@ -19,7 +19,7 @@ export async function POST(request: Request): Promise<NextResponse<AuthResponse>
 
         if (!validatedData.success) {
             return NextResponse.json(
-                { error: validatedData.error.errors[0].message, message: 'Validation failed' },
+                { error: z.treeifyError(validatedData.error).errors[0], message: 'Validation failed' },
                 { status: 400 }
             );
         }
@@ -27,7 +27,6 @@ export async function POST(request: Request): Promise<NextResponse<AuthResponse>
         const { email, password, baseSocialId } = validatedData.data;
 
         let user = null;
-
         if (baseSocialId) {
             user = await prisma.user.findUnique({
                 where: { baseSocialId },
