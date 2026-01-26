@@ -7,13 +7,25 @@ export const TransferAvatar = ({
 	account,
 	isLoading,
 	className,
+	onClick,
 }: {
 	isLoading?: boolean;
 	account?: TransferredAccount;
 	className?: string;
+	onClick?: () => void;
 }) => {
 	return (
-		<div className="relative">
+		<div
+			className={cn("relative", onClick && "cursor-pointer")}
+			onClick={onClick}
+			onKeyDown={(e) => {
+				if (e.key === "Enter" || e.key === " ") {
+					onClick?.();
+				}
+			}}
+			role={onClick ? "button" : undefined}
+			tabIndex={onClick ? 0 : undefined}
+		>
 			<Avatar className={cn("", className)}>
 				{isLoading || !account ? (
 					<AvatarImage />

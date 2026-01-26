@@ -2,9 +2,9 @@ import { DailySpendingCard } from "@/components/daily-spending-card";
 import { TopBar } from "@/components/top-bar";
 import { TopMarketValueCard } from "@/components/top-market-value-card";
 import { WalletActions } from "@/components/wallet-actions/wallet-actions";
+import { WalletCard } from "@/components/wallet-card";
 import { WalletInsightCard } from "@/components/wallet-insight-card";
 import Image from "next/image";
-import { WalletCard } from "../../components/wallet-card";
 
 export default function Home() {
 	return (

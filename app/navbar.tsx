@@ -39,7 +39,7 @@ const NavItem = ({
 };
 
 const navItems: Readonly<NavItemProp[]> = [
-	{ label: "Home", icon: Home, path: "/" },
+	{ label: "Home", icon: Home, path: "/home" },
 	{ label: "Wallet", icon: Wallet, path: "/wallet" },
 	{ label: "Analysis", icon: PieChart, path: "/analysis" },
 	{ label: "Profile", icon: User, path: "/profile" },

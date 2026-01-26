@@ -6,9 +6,10 @@ import {
 	BanknoteArrowUp,
 	CreditCard,
 	Gift,
-	LucideIcon,
+	type LucideIcon,
 } from "lucide-react";
-import { MouseEventHandler } from "react";
+import { useRouter } from "next/navigation";
+import type { MouseEventHandler } from "react";
 import { RecentTransferredAccounts } from "./recent-transferred-accounts";
 
 function WalletActionItem({
@@ -41,23 +42,28 @@ contains:
 4. Reward button ? 
 */
 export function WalletActions({ className }: { className?: string }) {
+	const router = useRouter();
+
 	const actions = [
 		{
 			icon: CreditCard,
 			label: "Transfer",
-			onClick: () => {},
+			onClick: () => router.push("/actions/transfer"),
 		},
 		{
 			icon: BanknoteArrowUp,
 			label: "Deposit",
+			onClick: () => router.push("/actions/deposit"),
 		},
 		{
 			icon: BanknoteArrowDown,
 			label: "Withdraw",
+			onClick: () => router.push("/actions/withdraw"),
 		},
 		{
 			icon: Gift,
 			label: "Rewards",
+			onClick: () => router.push("/actions/rewards"),
 		},
 	];
 

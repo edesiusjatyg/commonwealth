@@ -20,7 +20,6 @@ export const TopBarUserLoading = () => {
 };
 
 export function TopBarUserContainer() {
-	"use client";
 	const userQuery = useUser();
 
 	if (userQuery.isLoading) return <TopBarUserLoading />;

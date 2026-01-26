@@ -7,10 +7,11 @@ export const getUser = async () => {
 };
 
 export const useUser = () => {
-	"use client";
 	const userQuery = useQuery({
 		queryKey: ["user"],
 		queryFn: async () => getUser(),
+		refetchOnMount: false,
+		refetchOnWindowFocus: false,
 	});
 
 	return userQuery;
