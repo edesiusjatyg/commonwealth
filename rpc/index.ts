@@ -1,6 +1,9 @@
-"use server";
+// RPC Layer - Transport functions that call server actions
+// This layer sits between hooks and server actions
 
 import { delayedValue } from "@/lib/utils";
+import { getExpenses, withdraw as withdrawAction } from "@/app/server";
+import type { BalanceResponse, WalletResponse } from "@/types";
 
 export type TransferredAccountDTO = {
 	name: string;
@@ -166,3 +169,27 @@ export const saveContact = async (data: SaveContactDTO): Promise<void> => {
 	// Mock implementation - in real app this would persist to backend
 	await delayedValue(undefined, 500);
 };
+
+// ============================================
+// Server Action Integration - Wallet Operations
+// ============================================
+
+// Get wallet balance and transaction history via server action
+export const getWalletBalance = async (walletId: string): Promise<BalanceResponse> => {
+	return await getExpenses({ walletId });
+};
+
+// Withdraw input type for RPC layer
+export type WithdrawInput = {
+	walletId: string;
+	amount: number;
+	category: string;
+	password?: string;
+	description?: string;
+};
+
+// Withdraw funds via server action
+export const withdrawFunds = async (input: WithdrawInput): Promise<WalletResponse> => {
+	return await withdrawAction(input);
+};
+
