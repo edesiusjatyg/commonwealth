@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server';
-import { AuthResponse } from '@/types';
-
-// WIP
+import { NextResponse } from "next/server";
+import { logout } from "@/app/server";
+import { AuthResponse } from "@/types";
 
 export async function POST(): Promise<NextResponse<AuthResponse>> {
-    return NextResponse.json({ message: 'Logout successful' });
+	const result = await logout();
+	return NextResponse.json(result);
 }
