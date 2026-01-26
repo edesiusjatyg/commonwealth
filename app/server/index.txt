@@ -1,0 +1,162 @@
+# Server Actions Directory Index
+
+This file provides LLM context for the `/app/server` directory containing Next.js Server Actions.
+
+## Purpose
+
+Server Actions are the primary transport layer for this project. They are called from `/rpc` functions
+and handle all server-side operations including database access, external API calls, and authentication.
+
+## Architecture Flow
+
+```
+UI → Hooks (useQuery/useMutation) → Mappers → RPC → Server Actions → Database/External APIs
+```
+
+## File Structure
+
+```
+app/server/
+├── index.ts         # Re-exports all server actions for clean imports
+├── index.txt        # This file - LLM context
+├── auth.ts          # Authentication actions (login, logout, register)
+├── wallet.ts        # Wallet operations (create, deposit, withdraw, rewards)
+├── expenses.ts      # Balance and transaction history
+├── notifications.ts # User notifications management
+├── ai.ts            # AI/LLM integrations (chat, insights, sentiment)
+└── onboarding.ts    # Onboarding flow data
+```
+
+## Conventions
+
+### 1. File Structure Pattern
+
+Each server action file follows this pattern:
+
+```typescript
+"use server";
+
+import { z } from "zod";
+import { prisma } from "@/lib/prisma";
+
+// Input schemas (Zod validation)
+const inputSchema = z.object({ /* ... */ });
+
+// Input types (exported for consumers)
+export type InputType = z.infer<typeof inputSchema>;
+
+// Server action function
+export async function actionName(input: InputType): Promise<ResponseType> {
+  // 1. Validate input
+  const validated = inputSchema.safeParse(input);
+  if (!validated.success) {
+    return { error: z.treeifyError(validated.error).errors[0], /* defaults */ };
+  }
+  
+  // 2. Perform operation
+  // 3. Return response
+}
+```
+
+### 2. Response Patterns
+
+All responses follow a consistent pattern with optional `error` field:
+
+```typescript
+// Success
+{ message: "Success", data: /* ... */ }
+
+// Error
+{ error: "Error message", message: "Context" }
+```
+
+### 3. Import Usage
+
+**From RPC functions** (preferred):
+```typescript
+import { login, register } from "@/app/server";
+// or
+import * as serverActions from "@/app/server";
+```
+
+**Direct import** (when needed):
+```typescript
+import { deposit, withdraw } from "@/app/server/wallet";
+```
+
+## Available Actions
+
+### auth.ts
+| Action     | Input                           | Description                    |
+|------------|--------------------------------|--------------------------------|
+| `login`    | `{ email, password }` or `{ baseSocialId }` | Authenticate user |
+| `logout`   | none                           | End user session              |
+| `register` | `{ email, password, baseSocialId? }` | Create new user account |
+
+### wallet.ts
+| Action            | Input                                    | Description                     |
+|-------------------|------------------------------------------|---------------------------------|
+| `createWallet`    | `{ userId, address, name, emergencyEmail?, dailyLimit? }` | Create new wallet |
+| `deposit`         | `{ walletId, amount, category }`         | Add funds to wallet            |
+| `withdraw`        | `{ walletId, amount, category, password?, description? }` | Withdraw funds |
+| `approveDailyLimit` | `{ walletId, approvalCode }`           | Override daily spending limit  |
+| `processReward`   | `{ walletId, amount }`                   | Add yield/reward to wallet     |
+
+### expenses.ts
+| Action        | Input            | Description                        |
+|---------------|------------------|------------------------------------|
+| `getExpenses` | `{ walletId }`   | Get balance and transaction history |
+
+### notifications.ts
+| Action                 | Input               | Description                    |
+|------------------------|---------------------|--------------------------------|
+| `getNotifications`     | `{ userId }`        | Fetch user notifications       |
+| `markNotificationRead` | `{ notificationId }` | Mark notification as read      |
+
+### ai.ts
+| Action            | Input                          | Description                      |
+|-------------------|--------------------------------|----------------------------------|
+| `chat`            | `{ message }`                  | Chat with AI assistant           |
+| `generateInsight` | `{ userId, transactionsData }` | Generate AI spending insights    |
+| `getInsight`      | `{ userId }`                   | Fetch existing user insight      |
+| `getSentiment`    | `{ token, timeframe? }`        | Get market sentiment for token   |
+
+### onboarding.ts
+| Action              | Input | Description                |
+|---------------------|-------|----------------------------|
+| `getOnboardingSteps` | none  | Get onboarding step data   |
+
+## How to Add New Server Actions
+
+1. Create or update a file in `/app/server/` with `"use server"` directive
+2. Define Zod input schema for validation
+3. Export input type for TypeScript consumers
+4. Implement action function with validation → operation → response pattern
+5. Export from `/app/server/index.ts` for clean imports
+6. Update this index.txt with the new action
+
+## Integration with RPC
+
+Server actions are called from RPC functions, NOT directly from UI:
+
+```typescript
+// ❌ Wrong - Don't call server actions from UI
+import { deposit } from "@/app/server";
+const result = await deposit({ walletId, amount, category });
+
+// ✅ Correct - Call via RPC layer
+// rpc/wallet.ts
+import { deposit } from "@/app/server";
+
+export async function depositFunds(input: DepositInput): Promise<DepositDTO> {
+  return await deposit(input);
+}
+
+// hooks/use-deposit.ts
+export function useDeposit() {
+  return useMutation({
+    mutationFn: rpc.depositFunds,
+    // ...
+  });
+}
+```
