@@ -11,6 +11,8 @@ model User {
   email           String?     @unique
   passwordHash    String?
   baseSocialId   String?     @unique
+  eoaAddress     String?     @unique
+  encryptedKey   String?
   onboarded       Boolean     @default(false)
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
