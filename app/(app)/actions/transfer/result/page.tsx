@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { truncateText } from "@/lib/utils";
 import { Suspense } from "react";
 
-export default function TransferResultPage() {
+function TransferResultContent() {
 	const router = useRouter();
 	const searchParams = useSearchParams();
 
@@ -37,9 +37,7 @@ export default function TransferResultPage() {
 	};
 
 	return (
-		// FIXME: Suspense is a temporary fix for hydration issues
-		<Suspense fallback={<div>Loading...</div>}>
-			<main className="flex min-h-screen w-full flex-col items-center justify-center p-4">
+		<main className="flex min-h-screen w-full flex-col items-center justify-center p-4">
 				<Card className="w-full max-w-md">
 					<CardHeader className="text-center">
 						<div className="mb-4 flex justify-center">
@@ -129,6 +127,13 @@ export default function TransferResultPage() {
 					</CardContent>
 				</Card>
 			</main>
+	);
+}
+
+export default function TransferResultPage() {
+	return (
+		<Suspense fallback={<div>Loading...</div>}>
+			<TransferResultContent />
 		</Suspense>
 	);
 }
