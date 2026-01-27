@@ -5,6 +5,8 @@ import { WalletResponse } from "@/types";
 import { z } from "zod";
 import { computeWalletAddress, deployWalletOnChain } from "./chain";
 import { Address } from "viem";
+import { Transaction } from "@prisma/client";
+
 
 
 // Input schemas
@@ -245,11 +247,11 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 		}
 
 		const totalDeposits = wallet.transactions
-			.filter((t: any) => t.type === "DEPOSIT" || t.type === "YIELD")
-			.reduce((sum: number, t: any) => sum + Number(t.amount), 0);
+			.filter((t: Transaction) => t.type === "DEPOSIT" || t.type === "YIELD")
+			.reduce((sum: number, t: Transaction) => sum + Number(t.amount), 0);
 		const totalWithdrawals = wallet.transactions
-			.filter((t: any) => t.type === "WITHDRAWAL")
-			.reduce((sum: number, t: any) => sum + Number(t.amount), 0);
+			.filter((t: Transaction) => t.type === "WITHDRAWAL")
+			.reduce((sum: number, t: Transaction) => sum + Number(t.amount), 0);
 		const balance = totalDeposits - totalWithdrawals;
 
 		if (amount > balance) {
