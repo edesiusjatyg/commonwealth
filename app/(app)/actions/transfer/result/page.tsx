@@ -25,6 +25,9 @@ function TransferResultContent() {
 	const amount = searchParams.get("amount") || "0";
 	const fee = searchParams.get("fee") || "0";
 	const address = searchParams.get("address") || "";
+	// Mock data for category and description
+	const category = searchParams.get("category") || "Payment";
+	const description = searchParams.get("description") || "Transfer to wallet";
 
 	const copyToClipboard = (text: string, label: string) => {
 		navigator.clipboard.writeText(text);
@@ -65,6 +68,20 @@ function TransferResultContent() {
 							<span className="text-muted-foreground text-sm">Fee</span>
 							<span className="text-muted-foreground text-sm">{fee} USDT</span>
 						</div>
+						<div className="flex items-center justify-between">
+							<span className="text-muted-foreground text-sm">Category</span>
+							<Badge variant="secondary">{category}</Badge>
+						</div>
+						{description && (
+							<div className="flex items-center justify-between">
+								<span className="text-muted-foreground text-sm">
+									Description
+								</span>
+								<span className="max-w-[200px] truncate text-right text-sm">
+									<p>{description}</p>
+								</span>
+							</div>
+						)}
 						<Separator />
 						<div className="space-y-2">
 							<span className="text-muted-foreground text-sm">

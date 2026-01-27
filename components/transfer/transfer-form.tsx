@@ -125,6 +125,44 @@ export function TransferForm() {
 						</FormItem>
 					)}
 				/>
+			<FormField
+				control={form.control}
+				name="category"
+				render={({ field }) => (
+					<FormItem>
+						<FormLabel>Category</FormLabel>
+						<FormControl>
+							<Input
+								placeholder="e.g. Payment, Gift, Invoice"
+								maxLength={20}
+								{...field}
+								disabled={isPending}
+							/>
+						</FormControl>
+						<FormDescription>Max 20 characters</FormDescription>
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
+			<FormField
+				control={form.control}
+				name="description"
+				render={({ field }) => (
+					<FormItem>
+						<FormLabel>Description</FormLabel>
+						<FormControl>
+							<Input
+								placeholder="e.g. Payment for services"
+								maxLength={100}
+								{...field}
+								disabled={isPending}
+							/>
+						</FormControl>
+						<FormDescription>Optional. Max 100 characters</FormDescription>
+						<FormMessage />
+					</FormItem>
+				)}
+			/>
 				<FormField
 					control={form.control}
 					name="password"

@@ -16,6 +16,8 @@ const transferFormSchema = z.object({
 	destinationAddress: ethAddressSchema,
 	amount: z.number().min(1, "Minimum transfer amount is 1 USDT"),
 	password: z.string().min(8, "Password must be at least 8 characters long"),
+	category: z.string().max(20, "Category must be 20 characters or less"),
+	description: z.string().max(100, "Description must be 100 characters or less").optional(),
 });
 
 export type TransferFormData = z.infer<typeof transferFormSchema>;
@@ -42,6 +44,8 @@ export const useTransferForm = () => {
 			destinationAddress: initialAddress,
 			amount: 1,
 			password: "",
+			category: "",
+			description: "",
 		},
 		resolver: zodResolver(transferFormSchema),
 	});

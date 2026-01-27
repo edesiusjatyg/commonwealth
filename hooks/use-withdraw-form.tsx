@@ -1,10 +1,15 @@
-import { delayedValue } from "@/lib/utils";
 import { bankAccountSchema, Result } from "@/types";
+import { queryKeys } from "@/lib/queryKeys";
+import * as rpc from "@/rpc";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
+
+// TODO: Replace with actual wallet ID from user context
+const MOCK_WALLET_ID = "mock-wallet-id";
 
 const supportedBanks = [
 	"BCA (Bank Central Asia)",
@@ -25,24 +30,27 @@ const withdrawFormSchema = z.object({
 
 export type WithdrawFormData = z.infer<typeof withdrawFormSchema>;
 type WithdrawError = {
-	code: "INSUFFICIENT_FUNDS" | "INVALID_ACCOUNT" | "SERVER_ERROR";
+	code: "INSUFFICIENT_FUNDS" | "INVALID_ACCOUNT" | "SERVER_ERROR" | "DAILY_LIMIT";
 	message: string;
 };
 
 type WithdrawResult = Result<number, WithdrawError>;
-type WithdrawFn = (data: WithdrawFormData) => Promise<WithdrawResult>;
-const withdraw: WithdrawFn = async (_) => {
-	return delayedValue(
-		{
-			success: false,
-			error: { code: "INSUFFICIENT_FUNDS", message: "Insufficient funds" },
-		},
-		1000,
-	);
+
+// Maps server action error to typed error
+const mapServerError = (error: string): WithdrawError => {
+	if (error.includes("Insufficient")) {
+		return { code: "INSUFFICIENT_FUNDS", message: error };
+	}
+	if (error.includes("Daily limit")) {
+		return { code: "DAILY_LIMIT", message: error };
+	}
+	return { code: "SERVER_ERROR", message: error };
 };
 
-export const useWithdrawForm = () => {
+export const useWithdrawForm = (walletId?: string) => {
 	const [isPending, startTransition] = useTransition();
+	const queryClient = useQueryClient();
+	const effectiveWalletId = walletId || MOCK_WALLET_ID;
 
 	const form = useForm<WithdrawFormData>({
 		defaultValues: {
@@ -62,6 +70,12 @@ export const useWithdrawForm = () => {
 				});
 				form.setError("amount", { message: error.message });
 				break;
+			case "DAILY_LIMIT":
+				toast.error("Daily limit exceeded", {
+					description: error.message,
+				});
+				form.setError("amount", { message: error.message });
+				break;
 			case "INVALID_ACCOUNT":
 				form.setError("accountNumber", { message: error.message });
 				break;
@@ -76,13 +90,28 @@ export const useWithdrawForm = () => {
 		e.preventDefault();
 		startTransition(() => {
 			form.handleSubmit(async (data) => {
-				const res = await withdraw(data);
-				if (res.success) {
-					// handle success (e.g., show a success message, redirect, etc.)
+				// Call RPC which calls server action
+				const response = await rpc.withdrawFunds({
+					walletId: effectiveWalletId,
+					amount: data.amount,
+					category: data.bank,
+					password: data.password,
+					description: `Withdrawal to ${data.accountNumber}`,
+				});
+
+				if (response.error) {
+					handleError(mapServerError(response.error));
 					return;
-				} else {
-					handleError(res.error);
 				}
+
+				// Success - invalidate wallet queries to refresh balance
+				queryClient.invalidateQueries({ queryKey: queryKeys.wallet.all });
+				
+				toast.success("Withdrawal successful", {
+					description: response.message,
+				});
+				
+				form.reset();
 			})();
 		});
 	};

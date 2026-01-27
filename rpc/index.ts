@@ -1,6 +1,9 @@
-"use server";
+// RPC Layer - Transport functions that call server actions
+// This layer sits between hooks and server actions
 
 import { delayedValue } from "@/lib/utils";
+import { getExpenses, withdraw as withdrawAction } from "@/app/server";
+import type { BalanceResponse, TransactionRecord, WalletResponse } from "@/types";
 
 export type TransferredAccountDTO = {
 	name: string;
@@ -41,6 +44,8 @@ export type TransferDTO = {
 	destinationAddress: string;
 	amount: number;
 	password: string;
+	category?: string;
+	description?: string;
 };
 
 export type TransferResultDTO = {
@@ -165,4 +170,135 @@ export type SaveContactDTO = {
 export const saveContact = async (data: SaveContactDTO): Promise<void> => {
 	// Mock implementation - in real app this would persist to backend
 	await delayedValue(undefined, 500);
+};
+
+// Mock transaction history data
+const mockTransactionHistory: TransactionRecord[] = [
+	{
+		id: "tx-001",
+		walletId: "mock-wallet-id",
+		type: "DEPOSIT",
+		amount: 5000000,
+		category: "Salary",
+		description: "Monthly salary deposit",
+		createdAt: new Date("2026-01-15T10:30:00Z"),
+	},
+	{
+		id: "tx-002",
+		walletId: "mock-wallet-id",
+		type: "WITHDRAWAL",
+		amount: 150000,
+		category: "Food",
+		description: "Grocery shopping",
+		createdAt: new Date("2026-01-18T14:20:00Z"),
+	},
+	{
+		id: "tx-003",
+		walletId: "mock-wallet-id",
+		type: "WITHDRAWAL",
+		amount: 500000,
+		category: "Transportation",
+		description: "Monthly transport pass",
+		createdAt: new Date("2026-01-20T09:15:00Z"),
+	},
+	{
+		id: "tx-004",
+		walletId: "mock-wallet-id",
+		type: "YIELD",
+		amount: 25000,
+		category: "Interest",
+		description: "Daily interest earned",
+		createdAt: new Date("2026-01-21T00:00:00Z"),
+	},
+	{
+		id: "tx-005",
+		walletId: "mock-wallet-id",
+		type: "WITHDRAWAL",
+		amount: 200000,
+		category: "Entertainment",
+		description: "Movie tickets and dinner",
+		createdAt: new Date("2026-01-22T19:45:00Z"),
+	},
+	{
+		id: "tx-006",
+		walletId: "mock-wallet-id",
+		type: "DEPOSIT",
+		amount: 1000000,
+		category: "Transfer",
+		description: "Received from friend",
+		createdAt: new Date("2026-01-23T16:30:00Z"),
+	},
+	{
+		id: "tx-007",
+		walletId: "mock-wallet-id",
+		type: "WITHDRAWAL",
+		amount: 75000,
+		category: "Shopping",
+		description: "Online purchase",
+		createdAt: new Date("2026-01-24T11:00:00Z"),
+	},
+	{
+		id: "tx-008",
+		walletId: "mock-wallet-id",
+		type: "YIELD",
+		amount: 18500,
+		category: "Interest",
+		description: "Daily interest earned",
+		createdAt: new Date("2026-01-25T00:00:00Z"),
+	},
+];
+
+// ============================================
+// Server Action Integration - Wallet Operations
+// ============================================
+
+// Get wallet balance and transaction history via server action
+export const getWalletBalance = async (walletId: string): Promise<BalanceResponse> => {
+	return await getExpenses({ walletId });
+};
+
+// Withdraw input type for RPC layer
+export type WithdrawInput = {
+	walletId: string;
+	amount: number;
+	category: string;
+	password?: string;
+	description?: string;
+};
+
+// Withdraw funds via server action
+export const withdrawFunds = async (input: WithdrawInput): Promise<WalletResponse> => {
+	return await withdrawAction(input);
+};
+
+export type GetTransactionHistoryInput = {
+   walletId: string;
+   start: string; // iso date string
+   end: string; // iso date string
+}
+
+export type GetTransactionHistoryOutput = {
+   transactions: TransactionRecord[];
+}
+
+export const getTransactionHistory = async ({
+	walletId, // Not used in mock - all transactions use same mock wallet
+	start,
+	end,
+}: GetTransactionHistoryInput): Promise<GetTransactionHistoryOutput> => {
+	// Filter transactions by date range
+	const startDate = new Date(start);
+	const endDate = new Date(end);
+	
+	const filteredTransactions = mockTransactionHistory.filter((tx) => {
+		const txDate = new Date(tx.createdAt);
+		return txDate >= startDate && txDate <= endDate;
+	});
+
+	return await delayedValue(
+		{
+			transactions: filteredTransactions,
+		},
+		800,
+	);
 };
