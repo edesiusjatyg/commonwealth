@@ -29,7 +29,7 @@ const accountsVal = [
     ethAddress: "0xA4C2F9E1B6D8E5F7C3A0D9B2E6F1A8D5C7B4E9F",
   },
   {
-    name: "Charlie White",
+    name: "Charlie Kirk",
     accountNumber: "1124434455",
     ethAddress: "0x6E9F4C7A5B1D2F8E0A3C9B4E7D6F1A8C2E5B9D",
   },
