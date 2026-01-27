@@ -2,9 +2,10 @@
 // This layer sits between hooks and server actions
 
 import { delayedValue } from "@/lib/utils";
-import { getExpenses, withdraw as withdrawAction, getNotifications as getNotificationsAction, markNotificationRead as markNotificationReadAction } from "@/app/server";
-import type { BalanceResponse, TransactionRecord, WalletResponse, NotificationsResponse } from "@/types";
+import { getExpenses, withdraw as withdrawAction, getNotifications as getNotificationsAction, markNotificationRead as markNotificationReadAction, login as loginAction, register as registerAction, logout as logoutAction } from "@/app/server";
+import type { BalanceResponse, TransactionRecord, WalletResponse, NotificationsResponse, AuthResponse } from "@/types";
 import type { MarkNotificationReadResponse } from "@/app/server/notifications";
+import type { LoginInput, RegisterInput } from "@/app/server/auth";
 
 export type TransferredAccountDTO = {
 	name: string;
@@ -316,4 +317,23 @@ export const fetchNotifications = async (userId: string): Promise<NotificationsR
 // Mark notification as read via server action
 export const markNotificationAsRead = async (notificationId: string): Promise<MarkNotificationReadResponse> => {
 	return await markNotificationReadAction({ notificationId });
+};
+
+// ============================================
+// Server Action Integration - Authentication
+// ============================================
+
+// Login user via server action
+export const loginUser = async (input: LoginInput): Promise<AuthResponse> => {
+	return await loginAction(input);
+};
+
+// Register user via server action
+export const registerUser = async (input: RegisterInput): Promise<AuthResponse> => {
+	return await registerAction(input);
+};
+
+// Logout user via server action
+export const logoutUser = async (): Promise<AuthResponse> => {
+	return await logoutAction();
 };
