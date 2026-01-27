@@ -2,8 +2,9 @@
 // This layer sits between hooks and server actions
 
 import { delayedValue } from "@/lib/utils";
-import { getExpenses, withdraw as withdrawAction } from "@/app/server";
-import type { BalanceResponse, TransactionRecord, WalletResponse } from "@/types";
+import { getExpenses, withdraw as withdrawAction, getNotifications as getNotificationsAction, markNotificationRead as markNotificationReadAction } from "@/app/server";
+import type { BalanceResponse, TransactionRecord, WalletResponse, NotificationsResponse } from "@/types";
+import type { MarkNotificationReadResponse } from "@/app/server/notifications";
 
 export type TransferredAccountDTO = {
 	name: string;
@@ -301,4 +302,18 @@ export const getTransactionHistory = async ({
 		},
 		800,
 	);
+};
+
+// ============================================
+// Server Action Integration - Notifications
+// ============================================
+
+// Get notifications for a user via server action
+export const fetchNotifications = async (userId: string): Promise<NotificationsResponse> => {
+	return await getNotificationsAction({ userId });
+};
+
+// Mark notification as read via server action
+export const markNotificationAsRead = async (notificationId: string): Promise<MarkNotificationReadResponse> => {
+	return await markNotificationReadAction({ notificationId });
 };
