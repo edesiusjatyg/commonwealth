@@ -1,10 +1,10 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { setSessionCookie, clearSessionCookie, getCurrentUserId } from "@/lib/session";
 import { AuthResponse } from "@/types";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { cookies } from "next/headers";
 import { generateAccount } from "./chain";
 
 
@@ -73,14 +73,8 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
 			};
 		}
 
-		// Set cookie/token here
-		const cookieStore = await cookies();
-		cookieStore.set("session", user.id, {
-			httpOnly: true,
-			secure: process.env.NODE_ENV === "production",
-			sameSite: "strict",
-			maxAge: 60 * 60 * 24 * 7, // 1 week
-		});
+		// Set encrypted session cookie
+		await setSessionCookie(user.id);
 
 		return {
 			message: "Login successful",
@@ -100,8 +94,7 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
  * Logout current user
  */
 export async function logout(): Promise<AuthResponse> {
-	const cookieStore = await cookies();
-	cookieStore.delete("session");
+	await clearSessionCookie();
 	return { message: "Logout successful" };
 }
 
