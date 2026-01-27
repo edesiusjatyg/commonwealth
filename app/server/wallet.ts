@@ -5,9 +5,6 @@ import { WalletResponse } from "@/types";
 import { z } from "zod";
 import { computeWalletAddress, deployWalletOnChain } from "./chain";
 import { Address } from "viem";
-import { Prisma } from "@prisma/client";
-
-
 
 // Input schemas
 const createWalletSchema = z.object({
@@ -247,11 +244,11 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 		}
 
 		const totalDeposits = wallet.transactions
-			.filter((t: Prisma.TransactionGetPayload<{}>) => t.type === "DEPOSIT" || t.type === "YIELD")
-			.reduce((sum: number, t: Prisma.TransactionGetPayload<{}>) => sum + Number(t.amount), 0);
+			.filter((t) => t.type === "DEPOSIT" || t.type === "YIELD")
+			.reduce((sum: number, t) => sum + Number(t.amount), 0);
 		const totalWithdrawals = wallet.transactions
-			.filter((t: Prisma.TransactionGetPayload<{}>) => t.type === "WITHDRAWAL")
-			.reduce((sum: number, t: Prisma.TransactionGetPayload<{}>) => sum + Number(t.amount), 0);
+			.filter((t) => t.type === "WITHDRAWAL")
+			.reduce((sum: number, t) => sum + Number(t.amount), 0);
 		const balance = totalDeposits - totalWithdrawals;
 
 		if (amount > balance) {
