@@ -39,7 +39,7 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
 			};
 		}
@@ -114,7 +114,7 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
 			};
 		}

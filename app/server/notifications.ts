@@ -36,7 +36,7 @@ export async function getNotifications(
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 				notifications: [],
 			};
 		}
@@ -80,7 +80,7 @@ export async function markNotificationRead(
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
 			};
 		}

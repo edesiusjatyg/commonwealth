@@ -58,7 +58,7 @@ export async function createWallet(
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
 			};
 		}
@@ -162,7 +162,7 @@ export async function deposit(input: DepositInput): Promise<WalletResponse> {
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
 			};
 		}
@@ -222,7 +222,7 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
 			};
 		}
@@ -334,7 +334,7 @@ export async function approveDailyLimit(
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
 			};
 		}
@@ -398,7 +398,7 @@ export async function processReward(
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
 			};
 		}

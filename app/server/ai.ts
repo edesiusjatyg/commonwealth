@@ -43,7 +43,7 @@ export async function chat(input: ChatInput): Promise<ChatResponse> {
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 				reply: "",
 			};
 		}
@@ -77,7 +77,7 @@ export async function generateInsight(
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 				insight_text: "",
 				confidence: 0,
 			};
@@ -117,7 +117,7 @@ export async function getInsight(
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 				insight_text: "",
 				confidence: 0,
 			};
@@ -146,7 +146,7 @@ export async function getSentiment(
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 			} as any;
 		}
 
