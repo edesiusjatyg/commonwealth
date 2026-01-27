@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { BalanceResponse, TransactionRecord } from "@/types";
+import { Transaction } from "@prisma/client";
+
 import { z } from "zod";
 
 // Input schema
@@ -33,10 +35,11 @@ export async function getExpenses(
 
 		const { walletId } = validatedData.data;
 
-		const transactions = await prisma.transaction.findMany({
+		const transactions: Transaction[] = await prisma.transaction.findMany({
 			where: { walletId },
 			orderBy: { createdAt: "desc" },
 		});
+
 
 		const totalDeposits = transactions
 			.filter((t) => t.type === "DEPOSIT" || t.type === "YIELD")
