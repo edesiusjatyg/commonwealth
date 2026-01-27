@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/prisma";
 import { BalanceResponse, TransactionRecord } from "@/types";
-import { Transaction } from "@prisma/client";
 
 import { z } from "zod";
 
@@ -35,18 +34,19 @@ export async function getExpenses(
 
 		const { walletId } = validatedData.data;
 
-		const transactions: Transaction[] = await prisma.transaction.findMany({
+		const transactions = await prisma.transaction.findMany({
 			where: { walletId },
 			orderBy: { createdAt: "desc" },
 		});
 
+		type TransactionType = (typeof transactions)[number];
 
 		const totalDeposits = transactions
-			.filter((t) => t.type === "DEPOSIT" || t.type === "YIELD")
-			.reduce((sum, t) => sum + Number(t.amount), 0);
+			.filter((t: TransactionType) => t.type === "DEPOSIT" || t.type === "YIELD")
+			.reduce((sum, t: TransactionType) => sum + Number(t.amount), 0);
 		const totalWithdrawals = transactions
-			.filter((t) => t.type === "WITHDRAWAL")
-			.reduce((sum, t) => sum + Number(t.amount), 0);
+			.filter((t: TransactionType) => t.type === "WITHDRAWAL")
+			.reduce((sum, t: TransactionType) => sum + Number(t.amount), 0);
 
 		const history: TransactionRecord[] = transactions.map((t) => ({
 			id: t.id,
