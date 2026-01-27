@@ -25,7 +25,7 @@ export function useWalletBalance(walletId?: string) {
       if (response.error) {
         throw new Error(response.error);
       }
-      
+
       return {
         balance: response.balance,
         totalDeposits: response.totalDeposits,
