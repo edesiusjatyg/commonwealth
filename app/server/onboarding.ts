@@ -1,6 +1,7 @@
 "use server";
 
 import { OnboardingResponse, OnboardingStep } from "@/types";
+import { prisma } from "@/lib/prisma";
 
 /**
  * Get onboarding steps
@@ -31,3 +32,12 @@ export async function getOnboardingSteps(): Promise<OnboardingResponse> {
 
 	return { steps: onboardingSteps };
 }
+
+export async function completeOnboarding(userId: string): Promise<boolean> {
+	const result = await prisma.user.update({
+		where: { id: userId },
+		data: { onboarded: true },
+	});
+	return !!result;
+}
+
