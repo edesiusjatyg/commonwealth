@@ -71,7 +71,7 @@ describe('Wallet Server Actions', () => {
         it('should return error if user EOA not found', async () => {
             (prisma.user.findUnique as any).mockResolvedValue({ id: 'u1', eoaAddress: null });
 
-            const result = await createWallet({ userId: 'u1', name: 'My Wallet' });
+            const result = await createWallet({ userId: 'u1', name: 'My Wallet', dailyLimit: 100 });
 
             expect(result).toEqual({
                 error: 'User EOA not found',
