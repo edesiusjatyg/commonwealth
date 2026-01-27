@@ -243,12 +243,14 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 			};
 		}
 
+		type TransactionType = (typeof wallet.transactions)[number];
+
 		const totalDeposits = wallet.transactions
-			.filter((t) => t.type === "DEPOSIT" || t.type === "YIELD")
-			.reduce((sum: number, t) => sum + Number(t.amount), 0);
+			.filter((t: TransactionType) => t.type === "DEPOSIT" || t.type === "YIELD")
+			.reduce((sum: number, t: TransactionType) => sum + Number(t.amount), 0);
 		const totalWithdrawals = wallet.transactions
-			.filter((t) => t.type === "WITHDRAWAL")
-			.reduce((sum: number, t) => sum + Number(t.amount), 0);
+			.filter((t: TransactionType) => t.type === "WITHDRAWAL")
+			.reduce((sum: number, t: TransactionType) => sum + Number(t.amount), 0);
 		const balance = totalDeposits - totalWithdrawals;
 
 		if (amount > balance) {

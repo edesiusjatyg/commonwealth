@@ -39,13 +39,14 @@ export async function getExpenses(
 			orderBy: { createdAt: "desc" },
 		});
 
+		type TransactionType = (typeof transactions)[number];
 
 		const totalDeposits = transactions
-			.filter((t) => t.type === "DEPOSIT" || t.type === "YIELD")
-			.reduce((sum, t) => sum + Number(t.amount), 0);
+			.filter((t: TransactionType) => t.type === "DEPOSIT" || t.type === "YIELD")
+			.reduce((sum, t: TransactionType) => sum + Number(t.amount), 0);
 		const totalWithdrawals = transactions
-			.filter((t) => t.type === "WITHDRAWAL")
-			.reduce((sum, t) => sum + Number(t.amount), 0);
+			.filter((t: TransactionType) => t.type === "WITHDRAWAL")
+			.reduce((sum, t: TransactionType) => sum + Number(t.amount), 0);
 
 		const history: TransactionRecord[] = transactions.map((t) => ({
 			id: t.id,
