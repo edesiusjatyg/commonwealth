@@ -23,7 +23,7 @@ export async function getExpenses(
 
 		if (!validatedData.success) {
 			return {
-				error: z.treeifyError(validatedData.error).errors[0],
+				error: validatedData.error.issues[0].message,
 				balance: 0,
 				history: [],
 				totalDeposits: 0,
