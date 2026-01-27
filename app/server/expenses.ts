@@ -2,7 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { BalanceResponse, TransactionRecord } from "@/types";
-import { Transaction } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 import { z } from "zod";
 
@@ -35,7 +35,7 @@ export async function getExpenses(
 
 		const { walletId } = validatedData.data;
 
-		const transactions: Transaction[] = await prisma.transaction.findMany({
+		const transactions: Prisma.TransactionGetPayload<{}>[] = await prisma.transaction.findMany({
 			where: { walletId },
 			orderBy: { createdAt: "desc" },
 		});
