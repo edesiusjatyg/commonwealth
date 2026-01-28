@@ -35,13 +35,35 @@ See **[LOGS/CONSOLIDATED_DOCS.md](LOGS/CONSOLIDATED_DOCS.md)** for complete docu
 - **Health Check**: `GET /health`
 - **Chat**: `POST /chat`
 
+### Example Usage
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"user_message": "Compare BTC and ETH over the last week"}'
+```
+
+
 ## Response Format
 
 ```json
 {
-  "response": "Answer text",
-  "sources": [{"name": "Source", "link": "URL"}],
-  "suggested_prompts": ["three word", "prompts here", "for user"]
+  "data": {
+    "coins": ["BTC", "ETH"],
+    "type": "comparison",
+    "timeframe": "7d",
+    "explanation": "Bitcoin (BTC) and Ethereum (ETH) have shown divergent trends..."
+  },
+  "suggested_next_prompts": [
+    "Compare BTC vs SOL",
+    "Show ETH support levels",
+    "Why is ETH moving up?"
+  ],
+  "meta": {
+    "session_id": "abc123",
+    "ttl_remaining_sec": 3600,
+    "generated_at": 1738001385
+  }
 }
 ```
 

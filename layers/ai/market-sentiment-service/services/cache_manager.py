@@ -214,7 +214,17 @@ class CacheManager:
         
         try:
             async with self.pool.acquire() as conn:
-                sources_json = json.dumps(cited_sources)
+                # Convert Pydantic models to dicts if needed
+                sources_data = []
+                for source in cited_sources:
+                    if hasattr(source, 'model_dump'):  # Pydantic v2
+                        sources_data.append(source.model_dump())
+                    elif hasattr(source, 'dict'):  # Pydantic v1
+                        sources_data.append(source.dict())
+                    else:  # Already a dict
+                        sources_data.append(source)
+                
+                sources_json = json.dumps(sources_data)
                 
                 await conn.execute("""
                     INSERT INTO query_tracking 

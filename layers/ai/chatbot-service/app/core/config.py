@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     # API Configuration
     gemini_api_key: str
     api_host: str = "0.0.0.0"
-    api_port: int = 8000
+    api_port: int = 4673
     
     # Session Storage
     redis_url: str = "redis://localhost:6379/0"

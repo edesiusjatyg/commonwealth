@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+const SENTIMENT_SERVICE_URL = process.env.MARKET_SENTIMENT_SERVICE_URL || 'http://localhost:8001';
+
 // Valid timeframes for the sentiment microservice
 const VALID_TIMEFRAMES = ['1d', '7d', '30d', '365d'] as const;
 type Timeframe = typeof VALID_TIMEFRAMES[number];
@@ -14,14 +16,14 @@ function normalizeTimeframe(tf: string): Timeframe {
   return '1d'; // Default
 }
 
-// Proxy to sentiment microservice on port 8000
+// Proxy to sentiment microservice
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { token, timeframe = '1d' } = body;
 
     // Call sentiment microservice
-    const sentimentResponse = await fetch('http://localhost:8000/api/v1/sentiment', {
+    const sentimentResponse = await fetch(`${SENTIMENT_SERVICE_URL}/api/v1/sentiment`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

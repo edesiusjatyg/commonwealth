@@ -1,6 +1,6 @@
 """Models package initialization."""
 
-from app.models.enums import ChartType, Timeframe, SourceType, Freshness
+from app.models.enums import Timeframe, SourceType, Freshness
 from app.models.requests import ChatRequest, Metadata, CryptoContext
 from app.models.responses import (
     ChatResponse,
@@ -21,7 +21,6 @@ from app.models.internal import (
 
 __all__ = [
     # Enums
-    "ChartType",
     "Timeframe",
     "SourceType",
     "Freshness",
@@ -44,3 +43,4 @@ __all__ = [
     "NewsSearchParams",
     "NewsArticle",
 ]
+

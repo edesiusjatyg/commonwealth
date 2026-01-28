@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { TradingViewChart } from '@/components/trading/tradingview-chart';
+import { LightweightTradingChart } from '@/components/trading/lightweight-trading-chart';
 import { AISentimentCard } from '@/components/trading/ai-sentiment-card';
 import Image from 'next/image';
 
@@ -206,10 +206,10 @@ export default function TradingCoinPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* TradingView Chart */}
+      {/* Chart */}
       <div className="h-80 border-b border-border">
-        <TradingViewChart 
-          symbol={`BINANCE:${symbol.toUpperCase()}USDT`}
+        <LightweightTradingChart 
+          symbol={symbol.toUpperCase()}
           height="100%"
           interval={interval}
         />

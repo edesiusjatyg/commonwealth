@@ -2,10 +2,10 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from app.database import get_session
-from app.schemas import InsightRequest, InsightResponse, UserInsightRecord
-from app.services import InsightGenerator, ComparisonService
-from app.utils import get_timeframe_for_analysis, LLMScheduler
+from .database import get_session
+from .schemas import InsightRequest, InsightResponse, UserInsightRecord
+from .services import InsightGenerator, ComparisonService
+from .utils import get_timeframe_for_analysis, LLMScheduler
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1", tags=["insights"])
@@ -39,7 +39,7 @@ async def generate_insight(
                 insight_type=cached_insight.insight_type,
                 insight_text=cached_insight.insight_text,
                 confidence=cached_insight.confidence / 100.0,
-                sources=cached_insight.metadata.get("sources", []),
+                sources=cached_insight.insight_metadata.get("sources", []) if cached_insight.insight_metadata else [],
                 created_at=cached_insight.created_at
             )
         
@@ -68,7 +68,7 @@ async def generate_insight(
             insight_type=request.insight_type,
             insight_text=insight_text,
             confidence=int(confidence * 100),
-            metadata={
+            insight_metadata={
                 "sources": [sentiment_data],
                 "comparison": comparison,
                 "timeframe": timeframe

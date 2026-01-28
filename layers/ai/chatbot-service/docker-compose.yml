@@ -5,7 +5,7 @@ services:
     build: .
     container_name: ai-chatbot
     ports:
-      - "8000:8000"
+      - "4673:4673"
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - USE_REDIS=true

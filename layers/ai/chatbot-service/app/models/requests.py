@@ -47,7 +47,7 @@ class ChatRequest(BaseModel):
     
     session_id: Optional[str] = Field(None, min_length=1, max_length=100)
     user_message: str = Field(..., min_length=1, max_length=2000)
-    metadata: Metadata
+    metadata: Optional[Metadata] = None
     crypto_context: Optional[CryptoContext] = None
     external_context: Optional[str] = Field(None, max_length=5000)
     

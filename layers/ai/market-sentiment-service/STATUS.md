@@ -193,12 +193,12 @@ Health check endpoint.
 ./start.sh
 
 # Test 1st query (generates new)
-curl -X POST http://localhost:8000/api/v1/sentiment \
+curl -X POST http://localhost:8001/api/v1/sentiment \
   -H "Content-Type: application/json" \
   -d '{"token": "BTC", "timeframe": "1d"}' | jq .
 
 # Test 2nd query (uses cache)
-curl -X POST http://localhost:8000/api/v1/sentiment \
+curl -X POST http://localhost:8001/api/v1/sentiment \
   -H "Content-Type: application/json" \
   -d '{"token": "BTC", "timeframe": "1d"}' | jq .
 

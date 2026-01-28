@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Sparkline, generateSparklineData } from '@/components/trading/sparkline';
 
 interface Market {
   id: number;
@@ -67,7 +68,6 @@ export default function MarketsPage() {
     };
 
     fetchMarkets();
-    // Refresh every 60 seconds
     const interval = setInterval(fetchMarkets, 60000);
     return () => clearInterval(interval);
   }, []);
@@ -106,7 +106,6 @@ export default function MarketsPage() {
   const filteredMarkets = useMemo(() => {
     let result = [...markets];
 
-    // Search filter
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       result = result.filter(m =>
@@ -115,7 +114,6 @@ export default function MarketsPage() {
       );
     }
 
-    // Tab filter
     switch (activeTab) {
       case 'favorites':
         result = result.filter(m => favorites.has(m.symbol));
@@ -131,7 +129,6 @@ export default function MarketsPage() {
         break;
     }
 
-    // Apply sorting (except for special tabs)
     if (!['gainers', 'losers', 'hot'].includes(activeTab)) {
       result.sort((a, b) => {
         const aVal = a[sortKey];
@@ -167,7 +164,6 @@ export default function MarketsPage() {
         <div className="px-4 py-4">
           <h1 className="text-2xl font-bold mb-4">Markets</h1>
           
-          {/* Search */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -206,23 +202,18 @@ export default function MarketsPage() {
           </Tabs>
         </div>
 
-        {/* Table Header */}
-        <div className="px-4 py-2 grid grid-cols-12 gap-2 text-xs text-muted-foreground border-t border-border bg-muted/30">
-          <div className="col-span-1">
+        {/* Table Header - Balanced layout */}
+        <div className="px-4 py-2 flex items-center text-xs text-muted-foreground border-t border-border bg-muted/30">
+          <div className="w-8 flex-shrink-0">
             <SortHeader label="#" sortKeyName="rank" />
           </div>
-          <div className="col-span-3">Name</div>
-          <div className="col-span-2 text-right">
+          <div className="flex-1 min-w-1">Name</div>
+          <div className="w-10 text-right">
             <SortHeader label="Price" sortKeyName="price" className="justify-end" />
           </div>
-          <div className="col-span-2 text-right">
-            <SortHeader label="24h %" sortKeyName="change24h" className="justify-end" />
-          </div>
-          <div className="col-span-2 text-right hidden sm:block">
-            <SortHeader label="7d %" sortKeyName="change7d" className="justify-end" />
-          </div>
-          <div className="col-span-2 text-right hidden md:block">
-            <SortHeader label="Market Cap" sortKeyName="marketCap" className="justify-end" />
+          <div className="w-10 text-center mx-10">Chart</div>
+          <div className="w-9 text-right">
+            <SortHeader label="24h" sortKeyName="change24h" className="justify-end" />
           </div>
         </div>
       </div>
@@ -230,19 +221,17 @@ export default function MarketsPage() {
       {/* Market List */}
       <div className="pb-20">
         {isLoading ? (
-          // Loading skeleton
           <div className="divide-y divide-border">
             {Array.from({ length: 10 }).map((_, i) => (
-              <div key={i} className="px-4 py-3 grid grid-cols-12 gap-2 items-center animate-pulse">
-                <div className="col-span-1 h-4 bg-muted rounded" />
-                <div className="col-span-3 flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-muted" />
-                  <div className="h-4 w-16 bg-muted rounded" />
+              <div key={i} className="px-4 py-3 flex items-center gap-2 animate-pulse">
+                <div className="w-8 h-4 bg-muted rounded" />
+                <div className="flex-1 flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-full bg-muted" />
+                  <div className="h-4 w-20 bg-muted rounded" />
                 </div>
-                <div className="col-span-2 h-4 bg-muted rounded ml-auto w-20" />
-                <div className="col-span-2 h-4 bg-muted rounded ml-auto w-14" />
-                <div className="col-span-2 h-4 bg-muted rounded ml-auto w-14 hidden sm:block" />
-                <div className="col-span-2 h-4 bg-muted rounded ml-auto w-20 hidden md:block" />
+                <div className="w-24 h-4 bg-muted rounded" />
+                <div className="w-16 h-6 bg-muted rounded mx-2" />
+                <div className="w-16 h-4 bg-muted rounded" />
               </div>
             ))}
           </div>
@@ -254,35 +243,35 @@ export default function MarketsPage() {
         ) : (
           <div className="divide-y divide-border">
             {filteredMarkets.map((market) => {
-              const isPositive24h = market.change24h >= 0;
-              const isPositive7d = market.change7d >= 0;
+              const isPositive = market.change24h >= 0;
               const isFavorite = favorites.has(market.symbol);
+              const sparklineData = generateSparklineData(market.change24h);
 
               return (
                 <Link
                   key={market.id}
                   href={`/trading/${market.symbol.toLowerCase()}`}
-                  className="px-4 py-3 grid grid-cols-12 gap-2 items-center hover:bg-accent/50 active:bg-accent transition-colors"
+                  className="px-4 py-3 flex items-center hover:bg-accent/50 active:bg-accent transition-colors"
                 >
-                  {/* Rank */}
-                  <div className="col-span-1 flex items-center gap-1">
+                  {/* Rank + Favorite */}
+                  <div className="w-8 flex-shrink-0 flex items-center gap-0.5">
                     <button
                       onClick={(e) => toggleFavorite(market.symbol, e)}
                       className="p-0.5"
                     >
                       <Star
                         className={cn(
-                          "h-3.5 w-3.5 transition-colors",
-                          isFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground hover:text-yellow-400"
+                          "h-3 w-3 transition-colors",
+                          isFavorite ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/50"
                         )}
                       />
                     </button>
-                    <span className="text-xs text-muted-foreground">{market.rank}</span>
+                    <span className="text-[10px] text-muted-foreground">{market.rank}</span>
                   </div>
 
-                  {/* Name & Symbol */}
-                  <div className="col-span-3 flex items-center gap-2 min-w-0">
-                    <div className="relative w-8 h-8 flex-shrink-0">
+                  {/* Logo + Name */}
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    <div className="relative w-9 h-9 flex-shrink-0">
                       <Image
                         src={market.logo}
                         alt={market.name}
@@ -295,41 +284,34 @@ export default function MarketsPage() {
                     </div>
                     <div className="min-w-0">
                       <div className="font-semibold text-sm truncate">{market.symbol}</div>
-                      <div className="text-xs text-muted-foreground truncate">{market.name}</div>
+                      <div className="text-[10px] text-muted-foreground truncate">{market.name}</div>
                     </div>
                   </div>
 
                   {/* Price */}
-                  <div className="col-span-2 text-right">
+                  <div className="w-24 text-right">
                     <span className="font-mono text-sm font-medium">
                       ${formatPrice(market.price)}
                     </span>
                   </div>
 
+                  {/* Sparkline Chart */}
+                  <div className="w-16 flex justify-center mx-2">
+                    <Sparkline
+                      data={sparklineData}
+                      width={50}
+                      height={20}
+                      positive={isPositive}
+                    />
+                  </div>
+
                   {/* 24h Change */}
-                  <div className="col-span-2 text-right">
+                  <div className="w-16 text-right">
                     <span className={cn(
                       "text-sm font-medium",
-                      isPositive24h ? "text-green-500" : "text-red-500"
+                      isPositive ? "text-green-500" : "text-red-500"
                     )}>
-                      {isPositive24h ? '+' : ''}{market.change24h.toFixed(2)}%
-                    </span>
-                  </div>
-
-                  {/* 7d Change */}
-                  <div className="col-span-2 text-right hidden sm:block">
-                    <span className={cn(
-                      "text-sm font-medium",
-                      isPositive7d ? "text-green-500" : "text-red-500"
-                    )}>
-                      {isPositive7d ? '+' : ''}{market.change7d.toFixed(2)}%
-                    </span>
-                  </div>
-
-                  {/* Market Cap */}
-                  <div className="col-span-2 text-right hidden md:block">
-                    <span className="text-sm text-muted-foreground">
-                      {formatLargeNumber(market.marketCap)}
+                      {isPositive ? '+' : ''}{market.change24h.toFixed(1)}%
                     </span>
                   </div>
                 </Link>
@@ -341,3 +323,4 @@ export default function MarketsPage() {
     </div>
   );
 }
+

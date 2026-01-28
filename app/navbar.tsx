@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, type LucideIcon, PieChart, User, Wallet, ChartLine } from "lucide-react";
+import { Home, type LucideIcon, PieChart, User, Landmark, ChartLine } from "lucide-react";
 import Link, { type LinkProps } from "next/link";
 import { useRef } from "react";
 import { useHideOnScroll } from "@/hooks/use-hide-on-scroll";
@@ -40,14 +40,9 @@ const NavItem = ({
 
 const navItems: Readonly<NavItemProp[]> = [
 	{ label: "Home", icon: Home, path: "/home" },
-<<<<<<< HEAD
-	{ label: "Financial", icon: Wallet, path: "/financial" },
-	{ label: "Analysis", icon: PieChart, path: "/analysis" },
-=======
-	{ label: "Wallet", icon: Wallet, path: "/wallet" },
+	{ label: "Financial", icon: Landmark, path: "/financial" },
 	{ label: "Trading", icon: ChartLine, path: "/trading" },
 	{ label: "Portfolio", icon: PieChart, path: "/portfolio" },
->>>>>>> 2937e18 (add trading and portofolio)
 	{ label: "Profile", icon: User, path: "/profile" },
 ];
 

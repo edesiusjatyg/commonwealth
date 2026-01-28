@@ -72,6 +72,8 @@
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2",
+    "viem": "^2.21.67",
+    "wagmi": "^2.19.3",
     "zod": "^4.3.5"
   },
   "devDependencies": {

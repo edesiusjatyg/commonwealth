@@ -120,7 +120,7 @@ export function AISentimentCard({ symbol, name, timeframe = '1d' }: AISentimentC
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h3 className="font-semibold text-sm">AI Market Insight</h3>
+              <h3 className="font-semibold text-sm">Nostradamus</h3>
               <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
                 {getTimeframeLabel()}
               </span>
@@ -163,13 +163,12 @@ export function AISentimentCard({ symbol, name, timeframe = '1d' }: AISentimentC
                   </span>
                 </div>
                 
-                {/* Preview Summary */}
-                <p className={cn(
-                  "text-sm text-muted-foreground",
-                  !isExpanded && "line-clamp-2"
-                )}>
-                  {data.summary}
-                </p>
+                {/* Preview Summary - only show when collapsed */}
+                {!isExpanded && (
+                  <p className="text-sm text-muted-foreground line-clamp-2">
+                    {data.summary}
+                  </p>
+                )}
               </>
             ) : null}
           </div>
@@ -235,7 +234,7 @@ export function AISentimentCard({ symbol, name, timeframe = '1d' }: AISentimentC
         <div className="px-4 py-2 border-t border-border/50 bg-muted/20">
           <p className="text-xs text-muted-foreground/60 flex items-center gap-1">
             <Brain className="h-3 w-3" />
-            Powered by Market Sentiment AI
+            Powered by Nostradamus AI
           </p>
         </div>
       </Card>

@@ -5,8 +5,8 @@ import time
 
 from app.agents.gemini_client import GeminiClient
 from app.models.requests import ChatRequest
-from app.models.responses import ChatResponse, ChatData, ResponseMetadata, ChartConfig, Source
-from app.models.enums import ChartType, Timeframe, SourceType
+from app.models.responses import ChatResponse, ChatData, ResponseMetadata
+from app.models.enums import Timeframe
 from app.storage.session_store import SessionStore
 from app.core.config import settings
 from app.core.logging import get_logger
@@ -18,32 +18,23 @@ logger = get_logger(__name__)
 class ChatService:
     """Main chat service handling user requests."""
     
-    # Response format template
-    RESPONSE_FORMAT = """{
-  "data": {
-    "coins": "coin ticker symbol in capitalized (e.g., BTC, ETH)",
-    "type": "single_chart | comparison | multi_carousel | none",
-    "timeframe": "1d | 7d | 30d | 365d",
-    "explanation": "maximum of 200 words explaining the analysis"
-  },
-  "sources": [
-    {
-      "name": "Source name from web search",
-      "link": "https://actual-url-from-search.com"
-    }
-  ],
-  "suggested_next_prompts": [
-    "3 word prompt",
-    "3 word prompt",
-    "3 word prompt"
-  ]
-}"""
-    
     def __init__(self, session_store: SessionStore):
         """Initialize chat service."""
         self.session_store = session_store
         self.gemini_client = GeminiClient()
+        self.system_prompt = self._load_system_prompt()
         logger.info("chat_service_initialized")
+    
+    def _load_system_prompt(self) -> str:
+        """Load system prompt from file."""
+        try:
+            import os
+            prompt_path = os.path.join(os.path.dirname(__file__), "..", "models", "SYSTEM_PROMPT.md")
+            with open(prompt_path, "r") as f:
+                return f.read()
+        except Exception as e:
+            logger.warning("failed_to_load_system_prompt", error=str(e))
+            return "You are a cryptocurrency market analysis assistant. Provide accurate and helpful information."
     
     async def process_message(self, request: ChatRequest) -> ChatResponse:
         """
@@ -58,15 +49,16 @@ class ChatService:
         try:
             start_time = time.time()
             
-            # Get or create session
-            session_id = request.session_id or await self.session_store.create_session()
+            # Get or create session ID
+            import uuid
+            session_id = request.session_id or str(uuid.uuid4())
             
             logger.info("processing_message", session_id=session_id, message_length=len(request.user_message))
             
-            # Generate response using Gemini with Google Search
+            # Generate response using Gemini with enforced JSON output
             response_data = self.gemini_client.generate(
                 prompt=request.user_message,
-                response_format=self.RESPONSE_FORMAT
+                system_prompt=self.system_prompt
             )
             
             # Parse and validate response
@@ -76,11 +68,14 @@ class ChatService:
             await self._update_session(session_id, request.user_message, chat_data)
             
             # Get session TTL
-            ttl = await self.session_store.get_session_ttl(session_id)
+            ttl = await self.session_store.get_ttl(session_id)
+            if ttl is None:
+                ttl = 3600  # Default to 1 hour
             
             # Build response
             response = ChatResponse(
                 data=chat_data,
+                suggested_next_prompts=response_data.get("suggested_next_prompts", ["Tell me more", "What else?", "Continue"]),
                 meta=ResponseMetadata(
                     session_id=session_id,
                     ttl_remaining_sec=ttl,
@@ -108,71 +103,35 @@ class ChatService:
             Validated ChatData object
         """
         try:
-            # Extract nested data structure
+            # Extract data structure
             data = response_data.get("data", {})
             
             # Parse coin symbols
-            coins_str = data.get("coins", "")
-            coins = [c.strip().upper() for c in coins_str.split(",") if c.strip()]
-            if not coins:
+            coins = data.get("coins", [])
+            if isinstance(coins, str):
+                # Handle case where coins is a comma-separated string
+                coins = [c.strip().upper() for c in coins.split(",") if c.strip()]
+            elif isinstance(coins, list):
+                # Ensure all coins are uppercase strings
+                coins = [str(c).strip().upper() for c in coins if c]
+            else:
                 coins = []
             
-            # Parse chart type
-            chart_type = data.get("type", "none").lower()
-            if chart_type not in ["single_chart", "comparison", "multi_carousel", "none"]:
-                chart_type = "none"
-            
             # Parse timeframe
-            timeframe = data.get("timeframe", "1d")
-            if timeframe not in ["1d", "7d", "30d", "365d"]:
-                timeframe = "1d"
+            timeframe = data.get("timeframe", "1m")
+            if timeframe not in ["1d", "1m", "3m", "1y", "all"]:
+                timeframe = "1m"
             
             # Get explanation
             explanation = data.get("explanation", "").strip()
             if not explanation:
                 raise ValidationError("Missing explanation in response")
             
-            # Parse sources from response
-            sources_data = response_data.get("sources", [])
-            sources = []
-            
-            if sources_data and isinstance(sources_data, list):
-                for src in sources_data:
-                    if isinstance(src, dict):
-                        name = src.get("name", "").strip()
-                        link = src.get("link", "").strip()
-                        
-                        if name and link:
-                            sources.append(Source(
-                                type=SourceType.WEB_SEARCH,
-                                name=name,
-                                url=link
-                            ))
-            
-            # If no valid sources, use default
-            if not sources:
-                sources = [Source(
-                    type=SourceType.SEARCH_ENGINE,
-                    name="Google Search",
-                    url=None
-                )]
-            
-            # Get suggested prompts
-            suggested_prompts = response_data.get("suggested_next_prompts", [])
-            if len(suggested_prompts) < 3:
-                suggested_prompts = suggested_prompts + ["Tell me more"] * (3 - len(suggested_prompts))
-            suggested_prompts = suggested_prompts[:3]
-            
-            # Create ChatData with proper structure
+            # Create ChatData with new structure
             chat_data = ChatData(
-                chart_config=ChartConfig(
-                    coins=coins,
-                    type=ChartType(chart_type),
-                    timeframe=Timeframe(timeframe) if chart_type != "none" else None
-                ),
-                explanation=explanation,
-                sources=sources,
-                suggested_prompts=suggested_prompts
+                coins=coins,
+                timeframe=Timeframe(timeframe),
+                explanation=explanation
             )
             
             return chat_data
@@ -184,25 +143,31 @@ class ChatService:
     async def _update_session(self, session_id: str, user_message: str, chat_data: ChatData):
         """Update session with conversation turn."""
         try:
-            # Get existing session
-            session = await self.session_store.get_session(session_id)
+            # Get existing session or create new one
+            session = await self.session_store.get(session_id)
             if not session:
-                session = await self.session_store.create_session(session_id)
-                session = await self.session_store.get_session(session_id)
+                from app.models.internal import SessionData
+                session = SessionData(
+                    session_id=session_id,
+                    conversation_history=[],
+                    created_at=int(time.time()),
+                    last_activity=int(time.time())
+                )
             
             # Add conversation turn
-            from app.models.internal import ConversationTurn, MessageRole
+            from app.models.internal import ConversationTurn
             
             turn = ConversationTurn(
-                role=MessageRole.USER,
+                role="user",
                 content=user_message,
                 timestamp=int(time.time())
             )
             
             session.conversation_history.append(turn)
+            session.last_activity = int(time.time())
             
-            # Save updated session
-            await self.session_store.save_session(session)
+            # Save updated session with TTL (1 hour)
+            await self.session_store.set(session_id, session, ttl=3600)
             
             logger.debug("session_updated", session_id=session_id, history_length=len(session.conversation_history))
             

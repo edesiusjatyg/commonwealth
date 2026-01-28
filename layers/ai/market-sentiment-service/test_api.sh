@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 
 # Test 1: Health check
 echo -e "${YELLOW}Test 1: Health Check${NC}"
-response=$(curl -s http://localhost:8000/health)
+response=$(curl -s http://localhost:8001/health)
 if echo "$response" | grep -q "healthy"; then
     echo -e "${GREEN}✓ Health check passed${NC}"
 else
@@ -27,7 +27,7 @@ echo ""
 # Test 2: First sentiment query (should call DuckDuckGo + Gemini)
 echo -e "${YELLOW}Test 2: First Sentiment Query (BTC, 3d)${NC}"
 echo "This should fetch from DuckDuckGo and call Gemini LLM..."
-response=$(curl -s -X POST http://localhost:8000/api/v1/sentiment \
+response=$(curl -s -X POST http://localhost:8001/api/v1/sentiment \
   -H "Content-Type: application/json" \
   -d '{"token": "BTC", "timeframe": "3d"}')
 
@@ -45,7 +45,7 @@ echo ""
 # Test 3: Second sentiment query (should use cache, NO LLM call)
 echo -e "${YELLOW}Test 3: Second Sentiment Query (same token/timeframe)${NC}"
 echo "This should return cached result (no DuckDuckGo, no Gemini)..."
-response=$(curl -s -X POST http://localhost:8000/api/v1/sentiment \
+response=$(curl -s -X POST http://localhost:8001/api/v1/sentiment \
   -H "Content-Type: application/json" \
   -d '{"token": "BTC", "timeframe": "3d"}')
 
@@ -63,7 +63,7 @@ echo ""
 # Test 4: Different timeframe (should generate new analysis)
 echo -e "${YELLOW}Test 4: Different Timeframe (BTC, 7d)${NC}"
 echo "This should use cached articles but generate new sentiment..."
-response=$(curl -s -X POST http://localhost:8000/api/v1/sentiment \
+response=$(curl -s -X POST http://localhost:8001/api/v1/sentiment \
   -H "Content-Type: application/json" \
   -d '{"token": "BTC", "timeframe": "7d"}')
 

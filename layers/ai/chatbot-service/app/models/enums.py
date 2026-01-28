@@ -3,22 +3,23 @@
 from enum import Enum
 
 
-class ChartType(str, Enum):
-    """Chart visualization types."""
-    
-    SINGLE_CHART = "single_chart"
-    COMPARISON = "comparison"
-    MULTI_CAROUSEL = "multi_carousel"
-    NONE = "none"
-
-
 class Timeframe(str, Enum):
-    """Time periods for chart data."""
+    """Time periods for TradingView charts."""
     
     ONE_DAY = "1d"
-    SEVEN_DAYS = "7d"
-    THIRTY_DAYS = "30d"
-    THREE_SIXTY_FIVE_DAYS = "365d"
+    ONE_MONTH = "1m"
+    THREE_MONTHS = "3m"
+    ONE_YEAR = "1y"
+    ALL_TIME = "all"
+
+
+class ChartType(str, Enum):
+    """Types of charts for visualization."""
+    
+    LINE = "line"
+    CANDLESTICK = "candlestick"
+    BAR = "bar"
+    AREA = "area"
 
 
 class SourceType(str, Enum):

@@ -9,11 +9,11 @@ from datetime import datetime
 from typing import Optional
 import logging
 
-from config import settings
-from schemas import UserInsight
-from services.insight_generator import InsightGenerator
-from services.comparison_service import ComparisonService
-from app.database import init_db, close_db
+from .config import settings
+from .schemas import UserInsight
+from .services.insight_generator import InsightGenerator
+from .services.comparison_service import ComparisonService
+from .database import init_db, close_db
 
 # Configure logging
 logging.basicConfig(
@@ -58,7 +58,7 @@ insight_generator = InsightGenerator()
 comparison_service = ComparisonService()
 
 # Import routers after app creation
-from app.api import router
+from .api import router
 app.include_router(router)
 
 
@@ -176,6 +176,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "app.main:app",
         host="0.0.0.0",
-        port=8001,
+        port=8002,
         reload=settings.debug
     )

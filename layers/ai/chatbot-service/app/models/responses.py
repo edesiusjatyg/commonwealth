@@ -52,24 +52,19 @@ class ChatData(BaseModel):
     
     model_config = ConfigDict(extra="forbid")
     
-    chart_config: ChartConfig
+    coins: List[str] = Field(default_factory=list, max_length=5)
+    timeframe: Timeframe
     explanation: str = Field(..., min_length=1, max_length=2000)
-    sources: List[Source] = Field(..., min_length=1, max_length=10)
-    suggested_prompts: List[str] = Field(..., min_length=3, max_length=3)
     
-    @field_validator("suggested_prompts")
+    @field_validator("coins")
     @classmethod
-    def validate_prompts(cls, v: List[str]) -> List[str]:
-        """Validate suggested prompts."""
-        if len(v) != 3:
-            raise ValueError("Must provide exactly 3 suggested prompts")
+    def validate_coins(cls, v: List[str]) -> List[str]:
+        """Validate coin symbols."""
         validated = []
-        for prompt in v:
-            normalized = prompt.strip()
-            if not normalized:
-                raise ValueError("Suggested prompt cannot be empty")
-            if len(normalized) > 100:
-                raise ValueError("Suggested prompt too long")
+        for coin in v:
+            normalized = coin.strip().upper()
+            if not normalized.isalpha():
+                raise ValueError(f"Invalid coin symbol: {coin}")
             validated.append(normalized)
         return validated
 
@@ -90,7 +85,24 @@ class ChatResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
     
     data: ChatData
+    suggested_next_prompts: List[str] = Field(..., min_length=3, max_length=3)
     meta: ResponseMetadata
+    
+    @field_validator("suggested_next_prompts")
+    @classmethod
+    def validate_prompts(cls, v: List[str]) -> List[str]:
+        """Validate suggested prompts."""
+        if len(v) != 3:
+            raise ValueError("Must provide exactly 3 suggested prompts")
+        validated = []
+        for prompt in v:
+            normalized = prompt.strip()
+            if not normalized:
+                raise ValueError("Suggested prompt cannot be empty")
+            if len(normalized) > 100:
+                raise ValueError("Suggested prompt too long")
+            validated.append(normalized)
+        return validated
 
 
 class ErrorDetail(BaseModel):
