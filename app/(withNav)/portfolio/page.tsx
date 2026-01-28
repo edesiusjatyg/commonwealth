@@ -52,16 +52,16 @@ export default function PortfolioPage() {
         {/* Section Tabs */}
         <div className="px-4 pb-2">
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)}>
-            <TabsList className="h-9 bg-transparent gap-4 p-0">
+            <TabsList className="h-9 bg-transparent gap-1 p-0">
               <TabsTrigger 
                 value="overview" 
-                className="px-0 py-1.5 text-sm data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none border-b-2 data-[state=active]:border-primary border-transparent rounded-none"
+                className="px-3 py-1.5 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full"
               >
                 Overview
               </TabsTrigger>
               <TabsTrigger 
                 value="assets" 
-                className="px-0 py-1.5 text-sm data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none border-b-2 data-[state=active]:border-primary border-transparent rounded-none"
+                className="px-3 py-1.5 text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-full"
               >
                 Assets
               </TabsTrigger>
