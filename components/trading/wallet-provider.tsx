@@ -2,13 +2,14 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { CoinbaseWalletSDK } from '@coinbase/wallet-sdk';
-import type { Provider } from '@coinbase/wallet-sdk';
+
+type WalletProvider = ReturnType<CoinbaseWalletSDK['makeWeb3Provider']>;
 
 interface WalletContextType {
   isConnected: boolean;
   address: string | null;
   chainId: number | null;
-  provider: Provider | null;
+  provider: WalletProvider | null;
   connect: () => Promise<void>;
   disconnect: () => void;
   switchNetwork: (chainId: number) => Promise<void>;
@@ -20,7 +21,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [isConnected, setIsConnected] = useState(false);
   const [address, setAddress] = useState<string | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
-  const [provider, setProvider] = useState<Provider | null>(null);
+  const [provider, setProvider] = useState<WalletProvider | null>(null);
   const [sdk, setSdk] = useState<CoinbaseWalletSDK | null>(null);
 
   // Initialize Coinbase Wallet SDK
@@ -35,23 +36,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     setProvider(ethereum);
     setSdk(coinbaseWallet);
 
-    // Check if already connected
-    ethereum.request({ method: 'eth_accounts' })
-      .then((accounts: string[]) => {
-        if (accounts.length > 0) {
-          setAddress(accounts[0]);
-          setIsConnected(true);
-          
-          // Get chain ID
-          ethereum.request({ method: 'eth_chainId' })
-            .then((chainIdHex: string) => {
-              setChainId(parseInt(chainIdHex, 16));
-            });
-        }
-      });
-
-    // Listen for account changes
-    ethereum.on('accountsChanged', (accounts: string[]) => {
+    // Handler functions for cleanup
+    const handleAccountsChanged = (accounts: readonly string[]) => {
       if (accounts.length === 0) {
         setIsConnected(false);
         setAddress(null);
@@ -59,17 +45,39 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         setAddress(accounts[0]);
         setIsConnected(true);
       }
-    });
+    };
 
-    // Listen for chain changes
-    ethereum.on('chainChanged', (chainIdHex: string) => {
+    const handleChainChanged = (chainIdHex: string) => {
       setChainId(parseInt(chainIdHex, 16));
       // Reload page on chain change (recommended by Coinbase Wallet)
       window.location.reload();
-    });
+    };
+
+    // Check if already connected
+    ethereum.request({ method: 'eth_accounts' })
+      .then((accounts) => {
+        const accountsList = accounts as string[];
+        if (accountsList.length > 0) {
+          setAddress(accountsList[0]);
+          setIsConnected(true);
+          
+          // Get chain ID
+          ethereum.request({ method: 'eth_chainId' })
+            .then((chainIdHex) => {
+              setChainId(parseInt(chainIdHex as string, 16));
+            });
+        }
+      });
+
+    // Listen for account changes
+    ethereum.on('accountsChanged', handleAccountsChanged);
+
+    // Listen for chain changes
+    ethereum.on('chainChanged', handleChainChanged);
 
     return () => {
-      ethereum.removeAllListeners();
+      ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      ethereum.removeListener('chainChanged', handleChainChanged);
     };
   }, []);
 
@@ -112,9 +120,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: chainIdHex }],
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Chain not added, add it
-      if (error.code === 4902) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 4902) {
         const chainParams = getChainParams(targetChainId);
         await provider.request({
           method: 'wallet_addEthereumChain',
