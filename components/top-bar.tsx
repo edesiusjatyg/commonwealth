@@ -2,6 +2,7 @@ import { Bell, BellDot } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TopBarUserContainer } from "./top-bar-user";
+import Link from "next/link";
 
 /* TopBar component
 contains:
@@ -19,9 +20,11 @@ export function TopBar({ className }: { className?: string }) {
 			)}
 		>
 			<TopBarUserContainer />
-			<Button variant={"ghost"} size={"icon-lg"}>
-				{hasNotifications ? <BellDot /> : <Bell />}
-			</Button>
+         <Link href="/notifications">
+            <Button variant={"ghost"} size={"icon-lg"}>
+               {hasNotifications ? <BellDot /> : <Bell />}
+            </Button>
+         </Link>
 		</div>
 	);
 }

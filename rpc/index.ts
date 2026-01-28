@@ -2,8 +2,10 @@
 // This layer sits between hooks and server actions
 
 import { delayedValue } from "@/lib/utils";
-import { getExpenses, withdraw as withdrawAction } from "@/app/server";
-import type { BalanceResponse, TransactionRecord, WalletResponse } from "@/types";
+import { getExpenses, withdraw as withdrawAction, getNotifications as getNotificationsAction, markNotificationRead as markNotificationReadAction, login as loginAction, register as registerAction, logout as logoutAction } from "@/app/server";
+import type { BalanceResponse, TransactionRecord, WalletResponse, NotificationsResponse, AuthResponse } from "@/types";
+import type { MarkNotificationReadResponse } from "@/app/server/notifications";
+import type { LoginInput, RegisterInput } from "@/app/server/auth";
 
 export type TransferredAccountDTO = {
 	name: string;
@@ -317,4 +319,104 @@ export const getTransactionHistory = async ({
 		},
 		800,
 	);
+};
+
+// ============================================
+// Server Action Integration - Notifications
+// ============================================
+
+// Get notifications for a user via server action
+export const fetchNotifications = async (userId: string): Promise<NotificationsResponse> => {
+	return await getNotificationsAction({ userId });
+};
+
+// Mark notification as read via server action
+export const markNotificationAsRead = async (notificationId: string): Promise<MarkNotificationReadResponse> => {
+	return await markNotificationReadAction({ notificationId });
+};
+
+// ============================================
+// Server Action Integration - Authentication
+// ============================================
+
+// Login user via server action
+export const loginUser = async (input: LoginInput): Promise<AuthResponse> => {
+	return await loginAction(input);
+};
+
+// Register user via server action
+export const registerUser = async (input: RegisterInput): Promise<AuthResponse> => {
+	return await registerAction(input);
+};
+
+// Logout user via server action
+export const logoutUser = async (): Promise<AuthResponse> => {
+	return await logoutAction();
+};
+
+// ============================================
+// Profile - Mock Implementation
+// When server actions are ready, replace with actual calls
+// ============================================
+
+// Profile response type
+export type ProfileResponse = {
+	email: string;
+	nickname: string;
+	dailyLimit: number;
+	emergencyEmail: string | null;
+	walletAddress: string;
+	error?: string;
+	message?: string;
+};
+
+// Update profile input type
+export type UpdateProfileInput = {
+	walletId: string;
+	nickname?: string;
+	dailyLimit?: number;
+	emergencyEmail?: string | null;
+};
+
+// Update profile response type
+export type UpdateProfileResponse = {
+	success: boolean;
+	error?: string;
+	message?: string;
+};
+
+// Mock profile data
+const mockProfileData: Omit<ProfileResponse, "error" | "message"> = {
+	email: "user@example.com",
+	nickname: "My Wallet",
+	dailyLimit: 1000000,
+	emergencyEmail: "emergency@example.com",
+	walletAddress: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD73",
+};
+
+// Get profile data for a wallet (mock implementation)
+export const fetchProfile = async (walletId: string): Promise<ProfileResponse> => {
+	// Mock delay to simulate network request
+	await new Promise((resolve) => setTimeout(resolve, 800));
+	
+	// TODO: Replace with server action call when ready
+	// return await getProfileAction({ walletId });
+	
+	return mockProfileData;
+};
+
+// Update profile data (mock implementation)
+export const updateProfileData = async (input: UpdateProfileInput): Promise<UpdateProfileResponse> => {
+	// Mock delay to simulate network request
+	await new Promise((resolve) => setTimeout(resolve, 1000));
+	
+	// TODO: Replace with server action call when ready
+	// return await updateProfileAction(input);
+	
+	console.log("Profile update mock - received:", input);
+	
+	return {
+		success: true,
+		message: "Profile updated successfully",
+	};
 };
