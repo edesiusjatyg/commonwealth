@@ -24,4 +24,9 @@ export const queryKeys = {
     all: ['user'] as const,
     profile: () => ['user', 'profile'] as const,
   },
+  profile: {
+    all: ['profile'] as const,
+    detail: (walletId?: string) => ['profile', walletId] as const,
+  },
 } as const;
+
