@@ -282,7 +282,7 @@ export default function TradingCoinPage({ params }: PageProps) {
       <div className="flex-1" />
 
       {/* Action Buttons - Fixed at bottom */}
-      <div className="sticky bottom-0 p-4 border-t border-border bg-background/95 backdrop-blur-sm pb-20">
+      <div className="sticky bottom-0 p-4 border-t border-border bg-background/95 backdrop-blur-sm">
         <div className="grid grid-cols-2 gap-3">
           <Button 
             onClick={() => router.push(`/trading/${symbol}/buy`)}
