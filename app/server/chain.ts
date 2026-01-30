@@ -2,15 +2,20 @@ import { createPublicClient, createWalletClient, http, parseEther, Address } fro
 import { baseSepolia } from 'viem/chains';
 import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts';
 
-// Mock env vars for now - in production use process.env
-const FACTORY_ADDRESS = "0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f"; // From Foundry test output or deploy
-const RELAYER_PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // Anvil #0
+// Load env vars
+const FACTORY_ADDRESS = (process.env.NEXT_PUBLIC_FACTORY_ADDRESS || "0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f") as Address;
+const RELAYER_PRIVATE_KEY = process.env.RELAYER_PRIVATE_KEY as `0x${string}`;
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'https://sepolia.base.org';
 
-const account = privateKeyToAccount(RELAYER_PRIVATE_KEY as `0x${string}`);
+if (!RELAYER_PRIVATE_KEY) {
+    console.warn("Missing RELAYER_PRIVATE_KEY env var, using unsafe default for development ONLY");
+}
+
+const account = privateKeyToAccount(RELAYER_PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80");
 
 export const publicClient = createPublicClient({
     chain: baseSepolia,
-    transport: http() // Defaults to public RPC
+    transport: http(RPC_URL)
 });
 
 export const walletClient = createWalletClient({
