@@ -6,7 +6,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, Optional
 
-from utils.date_utils import DateUtils, TimePeriod
+from .date_utils import DateUtils, TimePeriod
 
 logger = logging.getLogger(__name__)
 

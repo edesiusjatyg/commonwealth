@@ -3,6 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { MiniAppSdk } from "./components/mini-app-sdk";
 import { Toaster } from "./components/ui/sonner";
+import { WalletProvider } from "@/components/trading/wallet-provider";
+import { PortfolioProvider } from "@/components/trading/portfolio-context";
 
 const createQueryClient = () => new QueryClient();
 
@@ -15,9 +17,14 @@ export default function Providers({
 
 	return (
 		<QueryClientProvider client={qc}>
-			<Toaster position="top-center" />
-			<MiniAppSdk />
-			{children}
+			<WalletProvider>
+				<PortfolioProvider>
+					<Toaster position="top-center" />
+					<MiniAppSdk />
+					{children}
+				</PortfolioProvider>
+			</WalletProvider>
 		</QueryClientProvider>
 	);
 }
+

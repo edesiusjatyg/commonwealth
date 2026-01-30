@@ -18,7 +18,7 @@ class UserInsightRecord(Base):
     insight_type = Column(String(50), nullable=False)  # "portfolio", "sentiment_driven", etc
     insight_text = Column(String(2000), nullable=False)
     confidence = Column(Integer, nullable=True)  # 0-100
-    metadata = Column(JSON, nullable=True)  # Additional context
+    insight_metadata = Column(JSON, nullable=True)  # Additional context (renamed from 'metadata' which is reserved)
     created_at = Column(DateTime, default=datetime.utcnow, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
@@ -87,7 +87,7 @@ class CategoryComparison(BaseModel):
     monthly: Optional[MonthlyComparison] = Field(None, description="Monthly comparison for this category")
 
 
-class UserInsightDetail(BaseModel):
+class UserInsight(BaseModel):
     """User financial insight with temporal comparisons"""
     timestamp: datetime = Field(..., description="Timestamp when insight was generated")
     data_retention_days: int = Field(default=90, description="Database stores data for 3 months (90 days) with TTL")

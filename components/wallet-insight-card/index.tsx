@@ -12,7 +12,7 @@ export function WalletInsightCard({ className }: { className?: string }) {
 		>
 			<Brain className="mt-2 size-8 shrink-0 text-primary" />
 			<div className="min-w-0 flex-1">
-				<h3 className="mb-2 text-md">AI Insight</h3>
+				<h3 className="mb-2 text-md">The Oracle</h3>
 				<WalletInsightContent />
 			</div>
 		</div>

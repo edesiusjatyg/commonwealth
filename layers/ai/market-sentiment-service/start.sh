@@ -202,13 +202,13 @@ echo "=========================================="
 echo "Starting Market Sentiment Service"
 echo "=========================================="
 echo ""
-echo "  API will be available at: http://localhost:8000"
-echo "  API docs: http://localhost:8000/docs (debug mode only)"
-echo "  Health check: http://localhost:8000/health"
+echo "  API will be available at: http://localhost:8001"
+echo "  API docs: http://localhost:8001/docs (debug mode only)"
+echo "  Health check: http://localhost:8001/health"
 echo ""
 echo "  Press Ctrl+C to stop the service"
 echo ""
 
 # Run the service
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8001
 

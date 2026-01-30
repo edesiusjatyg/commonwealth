@@ -89,12 +89,17 @@ export interface InsightResponse {
 }
 
 export interface ChatResponse {
-	reply: string;
-	charts?: Array<{
-		type: string;
-		title: string;
-		data: any;
-	}>;
+	data: {
+		coins: string[];
+		timeframe: string;
+		explanation: string;
+	} | null;
+	suggested_next_prompts: string[];
+	meta: {
+		session_id: string;
+		ttl_remaining_sec: number;
+		generated_at: number;
+	} | null;
 	error?: string;
 }
 

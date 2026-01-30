@@ -9,7 +9,7 @@ from typing import Dict, List, Optional, Any, Tuple
 from dataclasses import dataclass
 import logging
 
-from schemas import (
+from ..schemas import (
     WeeklyComparison, 
     MonthlyComparison, 
     PeriodComparison,

@@ -20,7 +20,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
-from config import settings
+from .config import settings
 
 Base = declarative_base()
 
@@ -192,7 +192,7 @@ async def init_db():
         )
         
         # Create tables
-        from app.schemas import Base
+        from .schemas import Base
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
         
@@ -218,5 +218,18 @@ async def get_session() -> AsyncSession:
         yield session
 
 
-# Initialize global DB instance
-db = InsightDatabase(settings.sqlalchemy_database_url, retention_days=settings.data_retention_days)
+# Lazy initialization of global DB instance
+_db_instance = None
+
+def get_db() -> InsightDatabase:
+    """Get the InsightDatabase instance (lazy initialization)."""
+    global _db_instance
+    if _db_instance is None:
+        _db_instance = InsightDatabase(
+            settings.sqlalchemy_database_url, 
+            retention_days=settings.data_retention_days
+        )
+    return _db_instance
+
+# For backward compatibility - will fail on first access if DB not available
+db = None  # Will be initialized lazily
