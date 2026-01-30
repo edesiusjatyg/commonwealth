@@ -10,12 +10,12 @@ contract BlackWalletFactory {
         address[] memory _owners,
         uint256 _requiredSignatures,
         uint256 _dailyLimit,
-        address _emergencyContact,
+        address[] memory _emergencyContacts,
         uint256 _salt
     ) external returns (address wallet) {
         bytes memory bytecode = abi.encodePacked(
             type(BlackWallet).creationCode,
-            abi.encode(_owners, _requiredSignatures, _dailyLimit, _emergencyContact)
+            abi.encode(_owners, _requiredSignatures, _dailyLimit, _emergencyContacts)
         );
 
         bytes32 salt = keccak256(abi.encodePacked(msg.sender, _salt));
@@ -33,13 +33,13 @@ contract BlackWalletFactory {
         address[] memory _owners,
         uint256 _requiredSignatures,
         uint256 _dailyLimit,
-        address _emergencyContact,
+        address[] memory _emergencyContacts,
         uint256 _salt,
         address _deployer
     ) external view returns (address) {
         bytes memory bytecode = abi.encodePacked(
             type(BlackWallet).creationCode,
-            abi.encode(_owners, _requiredSignatures, _dailyLimit, _emergencyContact)
+            abi.encode(_owners, _requiredSignatures, _dailyLimit, _emergencyContacts)
         );
 
         bytes32 salt = keccak256(abi.encodePacked(_deployer, _salt));

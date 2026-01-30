@@ -25,6 +25,7 @@ export const walletClient = createWalletClient({
 });
 
 // ABI for BlackWalletFactory
+// ABI for BlackWalletFactory
 export const FACTORY_ABI = [
     {
         "type": "function",
@@ -33,7 +34,7 @@ export const FACTORY_ABI = [
             { "name": "_owners", "type": "address[]", "internalType": "address[]" },
             { "name": "_requiredSignatures", "type": "uint256", "internalType": "uint256" },
             { "name": "_dailyLimit", "type": "uint256", "internalType": "uint256" },
-            { "name": "_emergencyContact", "type": "address", "internalType": "address" },
+            { "name": "_emergencyContacts", "type": "address[]", "internalType": "address[]" },
             { "name": "_salt", "type": "uint256", "internalType": "uint256" }
         ],
         "outputs": [{ "name": "wallet", "type": "address", "internalType": "address" }],
@@ -46,7 +47,7 @@ export const FACTORY_ABI = [
             { "name": "_owners", "type": "address[]", "internalType": "address[]" },
             { "name": "_requiredSignatures", "type": "uint256", "internalType": "uint256" },
             { "name": "_dailyLimit", "type": "uint256", "internalType": "uint256" },
-            { "name": "_emergencyContact", "type": "address", "internalType": "address" },
+            { "name": "_emergencyContacts", "type": "address[]", "internalType": "address[]" },
             { "name": "_salt", "type": "uint256", "internalType": "uint256" },
             { "name": "_deployer", "type": "address", "internalType": "address" }
         ],
@@ -59,7 +60,7 @@ export async function deployWalletOnChain(
     owners: Address[],
     requiredSignatures: bigint,
     dailyLimit: bigint,
-    emergencyContact: Address,
+    emergencyContacts: Address[],
     salt: bigint
 ): Promise<string> {
     try {
@@ -67,7 +68,7 @@ export async function deployWalletOnChain(
             address: FACTORY_ADDRESS,
             abi: FACTORY_ABI,
             functionName: 'createWallet',
-            args: [owners, requiredSignatures, dailyLimit, emergencyContact, salt]
+            args: [owners, requiredSignatures, dailyLimit, emergencyContacts, salt]
         });
 
         // In a real app we would wait for receipt and extract event.
@@ -103,14 +104,14 @@ export async function computeWalletAddress(
     owners: Address[],
     requiredSignatures: bigint,
     dailyLimit: bigint,
-    emergencyContact: Address,
+    emergencyContacts: Address[],
     salt: bigint
 ): Promise<string> {
     const address = await publicClient.readContract({
         address: FACTORY_ADDRESS,
         abi: FACTORY_ABI,
         functionName: 'computeAddress',
-        args: [owners, requiredSignatures, dailyLimit, emergencyContact, salt, FACTORY_ADDRESS]
+        args: [owners, requiredSignatures, dailyLimit, emergencyContacts, salt, FACTORY_ADDRESS]
     });
     return address;
 }
