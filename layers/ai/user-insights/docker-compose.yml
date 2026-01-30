@@ -28,8 +28,10 @@ services:
       POSTGRES_DB: user_insights
       POSTGRES_USER: insights_user
       POSTGRES_PASSWORD: insights_pass
-      MARKET_SENTIMENT_SERVICE_URL: http://host.docker.internal:8000
+      MARKET_SENTIMENT_SERVICE_URL: http://host.docker.internal:8001
       DEBUG: "False"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
