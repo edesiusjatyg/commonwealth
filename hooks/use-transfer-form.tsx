@@ -11,6 +11,8 @@ import z from "zod";
 import { transferCrypto } from "@/rpc";
 import { useSaveContact } from "./use-save-contact";
 import { useTransferredAccounts } from "./use-transferred-accounts";
+import { useDailySpending } from "./use-daily-spending";
+import { useCurrentWallet } from "./use-current-wallet";
 
 const transferFormSchema = z.object({
 	destinationAddress: ethAddressSchema,
@@ -22,7 +24,7 @@ const transferFormSchema = z.object({
 
 export type TransferFormData = z.infer<typeof transferFormSchema>;
 
-export const useTransferForm = () => {
+export const useTransferForm = (walletId?: string) => {
 	const [isPending, startTransition] = useTransition();
 	const router = useRouter();
 	const searchParams = useSearchParams();
@@ -31,6 +33,10 @@ export const useTransferForm = () => {
 	const [saveAsContact, setSaveAsContact] = useState(false);
 	const [contactName, setContactName] = useState("");
 	const [contactError, setContactError] = useState("");
+
+	// Wallet & Spending hooks
+	const { data: wallet } = useCurrentWallet();
+	const { data: spendingData } = useDailySpending(wallet ?? undefined);
 
 	// Hooks for contacts
 	const { data: contacts } = useTransferredAccounts();
@@ -57,6 +63,13 @@ export const useTransferForm = () => {
 		defaultValue: initialAddress,
 	});
 
+	// Watch amount reactively
+	const amount = useWatch({
+		control: form.control,
+		name: "amount",
+		defaultValue: 1,
+	});
+
 	// Check if address is valid (starts with 0x and has 42 chars)
 	const isValidAddress =
 		destinationAddress.length === 42 && destinationAddress.startsWith("0x");
@@ -79,6 +92,22 @@ export const useTransferForm = () => {
 		setContactError("");
 	};
 
+	// Daily Limit Validation
+	const dailyLimitStatus = (() => {
+		if (!spendingData) return { isOverLimit: false, isNearLimit: false, remaining: 0, maxDailySpending: 0 };
+		
+		const { currentSpending, maxDailySpending } = spendingData;
+		const potentialTotal = currentSpending + amount;
+		const remaining = Math.max(0, maxDailySpending - currentSpending);
+		
+		return {
+			isOverLimit: potentialTotal > maxDailySpending,
+			isNearLimit: potentialTotal >= maxDailySpending * 0.8 && potentialTotal <= maxDailySpending,
+			remaining,
+			maxDailySpending,
+		};
+	})();
+
 	const transferAction = (e: React.FormEvent) => {
 		e.preventDefault();
 
@@ -92,7 +121,14 @@ export const useTransferForm = () => {
 		startTransition(() => {
 			form.handleSubmit(async (data) => {
 				try {
-					const result = await transferCrypto(data);
+					if (!walletId) {
+						throw new Error("Wallet ID is required for transfer");
+					}
+
+					const result = await transferCrypto({
+						...data,
+						walletId,
+					});
 
 					// Save contact if opted in
 					if (saveAsContact && contactName.trim()) {
@@ -142,5 +178,6 @@ export const useTransferForm = () => {
 		setContactName,
 		contactError,
 		resetSaveContact,
+		dailyLimitStatus,
 	};
 };

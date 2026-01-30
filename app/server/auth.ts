@@ -164,3 +164,26 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 		};
 	}
 }
+/**
+ * Get the current user info
+ */
+export async function getCurrentUser(): Promise<{ id: string; email: string | null; onboarded: boolean } | null> {
+	try {
+		const userId = await getCurrentUserId();
+		if (!userId) return null;
+
+		const user = await prisma.user.findUnique({
+			where: { id: userId },
+			select: {
+				id: true,
+				email: true,
+				onboarded: true,
+			},
+		});
+
+		return user;
+	} catch (error) {
+		console.error("Get current user error:", error);
+		return null;
+	}
+}

@@ -1,4 +1,5 @@
 import { useTransactionHistory } from "@/hooks/use-transaction-history";
+import { useCurrentWallet } from "@/hooks/use-current-wallet";
 import { MonthSelector } from "./month-selector";
 import { TransactionEmptyState } from "./transaction-empty-state";
 import { TransactionGroup } from "./transaction-group";
@@ -15,6 +16,8 @@ export function TransactionList({
 	currentYear,
 	className,
 }: TransactionListProps) {
+	const { data: wallet } = useCurrentWallet();
+	
 	const {
 		isLoading,
 		year,
@@ -22,7 +25,8 @@ export function TransactionList({
 		monthName,
 		setMonthByName,
 		groupedTransactions,
-	} = useTransactionHistory();
+	} = useTransactionHistory(wallet?.id);
+
 
 	return (
 		// FIXME: sticky issues

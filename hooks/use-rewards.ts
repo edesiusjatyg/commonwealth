@@ -3,10 +3,11 @@
 import { getRewards } from "@/rpc";
 import { useQuery } from "@tanstack/react-query";
 
-export const useRewards = () => {
+export const useRewards = (walletId?: string) => {
 	return useQuery({
-		queryKey: ["rewards"],
-		queryFn: getRewards,
+		queryKey: ["rewards", walletId],
+		queryFn: () => getRewards(walletId),
+		enabled: !!walletId,
 		refetchOnMount: false,
 		refetchOnWindowFocus: false,
 	});

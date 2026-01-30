@@ -1,6 +1,7 @@
 "use client";
 
 import { useRewards } from "@/hooks/use-rewards";
+import { useCurrentWallet } from "@/hooks/use-current-wallet";
 import { RewardCard } from "./reward-card";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -66,10 +67,15 @@ function RewardsErrorState({ message }: { message: string }) {
 }
 
 export function RewardsList() {
-	const { data: rewards, isLoading, isError, error } = useRewards();
+	const { data: wallet, isLoading: walletLoading } = useCurrentWallet();
+	const { data: rewards, isLoading, isError, error } = useRewards(wallet?.id);
 
-	if (isLoading) {
+	if (walletLoading || isLoading) {
 		return <RewardsListSkeleton />;
+	}
+
+	if (!wallet) {
+		return <div>No wallet found. Please create one to start earning rewards.</div>;
 	}
 
 	if (isError) {

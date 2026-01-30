@@ -9,6 +9,7 @@ import {
 import { truncateText } from "@/lib/utils";
 import { getWalletInsight } from "@/rpc";
 import { useQuery } from "@tanstack/react-query";
+import { useUser } from "@/hooks/use-user";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 
@@ -16,14 +17,17 @@ import { useState } from "react";
 const USER_ID = "cmkwpj2x800006uijtemzrsra";
 
 export function WalletInsightContent() {
+	const { data: user } = useUser();
 	const [isExpanded, setIsExpanded] = useState(false);
 
 	const { data, isLoading, error } = useQuery({
-		queryKey: ["walletInsight", USER_ID],
+		queryKey: ["walletInsight", user?.id],
 		queryFn: async () => {
-			const result = await getWalletInsight(USER_ID);
+			if (!user?.id) return null;
+			const result = await getWalletInsight(user.id);
 			return result.insight;
 		},
+		enabled: !!user?.id,
 	});
 
 	if (isLoading) {

@@ -51,7 +51,7 @@ function groupTransactionsByDate(transactions: TransactionRecord[]) {
 		});
 }
 
-export function useTransactionHistory() {
+export function useTransactionHistory(walletId?: string) {
 	const currentDate = new Date();
 	const [year, setYear] = useState<number>(currentDate.getFullYear());
 	const [month, setMonth] = useState<number>(currentDate.getMonth() + 1); // 1-12
@@ -64,13 +64,11 @@ export function useTransactionHistory() {
 	const start = new Date(year, monthIndex, 1).toISOString();
 	const end = new Date(year, month, 0, 23, 59, 59, 999).toISOString();
 
-	// TODO: Get actual wallet ID from user context
-	const walletId = "default-wallet";
-
 	// Fetch transaction history
 	const query = useQuery({
 		queryKey: ["transaction-history", walletId, year, month],
-		queryFn: () => getTransactionHistory({ walletId, start, end }),
+		queryFn: () => getTransactionHistory({ walletId: walletId || "", start, end }),
+		enabled: !!walletId,
 	});
 
 	// Helper to set month by name

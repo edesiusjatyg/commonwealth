@@ -2,8 +2,37 @@
 // This layer sits between hooks and server actions
 
 import { delayedValue } from "@/lib/utils";
-import { getExpenses, withdraw as withdrawAction, getNotifications as getNotificationsAction, markNotificationRead as markNotificationReadAction, login as loginAction, register as registerAction, logout as logoutAction } from "@/app/server";
-import type { BalanceResponse, TransactionRecord, WalletResponse, NotificationsResponse, AuthResponse } from "@/types";
+import {
+	getExpenses,
+	withdraw as withdrawAction,
+	getNotifications as getNotificationsAction,
+	markNotificationRead as markNotificationReadAction,
+	login as loginAction,
+	register as registerAction,
+	logout as logoutAction,
+	getInsight as getInsightAction,
+	getProfile as getProfileAction,
+	updateProfile as updateProfileAction,
+	getContacts,
+	saveContactAction,
+	initiateTransfer,
+	getRewardsHistory,
+	getCurrentWallet,
+	getCurrentUser,
+	createWallet,
+} from "@/app/server";
+import type {
+	ProfileResponse as ServerProfileResponse,
+	UpdateProfileResponse as ServerUpdateProfileResponse,
+	UpdateProfileInput as ServerUpdateProfileInput,
+} from "@/app/server";
+import type {
+	BalanceResponse,
+	TransactionRecord,
+	WalletResponse,
+	NotificationsResponse,
+	AuthResponse,
+} from "@/types";
 import type { MarkNotificationReadResponse } from "@/app/server/notifications";
 import type { LoginInput, RegisterInput } from "@/app/server/auth";
 
@@ -14,38 +43,21 @@ export type TransferredAccountDTO = {
 	avatarUrl?: string;
 };
 
-const accountsVal = [
-  {
-    name: "Alice Johnson",
-    accountNumber: "1234567890",
-    ethAddress: "0x8b7d0E0F9E8A6F5C3B2D1A4E6C7F9A1B2D3E4F5A",
-  },
-  {
-    name: "Bob Smith",
-    accountNumber: "0987654321",
-    ethAddress: "0x3F1A9E6C7D8B2E4F5A0C1D9B6E7A8F2C4D5B1E0A",
-  },
-  {
-    name: "Emanuel Brown",
-    accountNumber: "1122334455",
-    ethAddress: "0xA4C2F9E1B6D8E5F7C3A0D9B2E6F1A8D5C7B4E9F",
-  },
-  {
-    name: "Charlie Kirk",
-    accountNumber: "1124434455",
-    ethAddress: "0x6E9F4C7A5B1D2F8E0A3C9B4E7D6F1A8C2E5B9D",
-  },
-];
-
 export const getTransferredAccounts: () => Promise<TransferredAccountDTO[]> =
 	async () => {
-		return await delayedValue(accountsVal);
+		const contacts = await getContacts();
+		return contacts.map((c) => ({
+			name: c.name,
+			accountNumber: "", // In current schema accountNumber is not relevant for crypto contacts
+			ethAddress: c.ethAddress,
+		}));
 	};
 
 export type TransferDTO = {
+	walletId: string;
 	destinationAddress: string;
 	amount: number;
-	password: string;
+	password?: string;
 	category?: string;
 	description?: string;
 };
@@ -58,21 +70,29 @@ export type TransferResultDTO = {
 	destinationAddress: string;
 };
 
-// Simple mock - just return success data directly
+// Transfer crypto via server action
 export const transferCrypto = async (
 	data: TransferDTO,
 ): Promise<TransferResultDTO> => {
-	// Mock implementation with delay
-	return await delayedValue(
-		{
-			transactionId: `0x${Math.random().toString(16).slice(2)}`,
-			amount: data.amount,
-			fee: data.amount * 0.001, // 0.1% fee
-			timestamp: Date.now(),
-			destinationAddress: data.destinationAddress,
-		},
-		1500,
-	);
+	const response = await initiateTransfer({
+		walletId: data.walletId,
+		destinationAddress: data.destinationAddress,
+		amount: data.amount,
+		category: data.category || "Transfer",
+		description: data.description,
+	});
+
+	if (response.error) {
+		throw new Error(response.error);
+	}
+
+	return {
+		transactionId: `0x${Math.random().toString(16).slice(2)}`, // Placeholder until we have real tx hashes
+		amount: data.amount,
+		fee: 0, // Fee calculation would happen on-chain
+		timestamp: Date.now(),
+		destinationAddress: data.destinationAddress,
+	};
 };
 
 export type WalletInsightDTO = {
@@ -86,13 +106,12 @@ import { getOracleInsight } from "@/app/server";
 const defaultInsight =
 	"Welcome to The Oracle. Connect your wallet to receive personalized insights about your portfolio and spending patterns.";
 
-export const getWalletInsight = async (userId?: string): Promise<WalletInsightDTO> => {
+export const getWalletInsight = async (
+	userId?: string,
+): Promise<WalletInsightDTO> => {
 	// If no userId provided, return default insight
 	if (!userId) {
-		return await delayedValue(
-			{ insight: defaultInsight },
-			300,
-		);
+		return await delayedValue({ insight: defaultInsight }, 300);
 	}
 
 	try {
@@ -163,115 +182,48 @@ const mockRewards: RewardDTO[] = [
 	},
 ];
 
-export const getRewards = async (): Promise<RewardDTO[]> => {
-	return await delayedValue(mockRewards, 1000);
-};
+export const getRewards = async (walletId?: string): Promise<RewardDTO[]> => {
+	if (!walletId) return [];
 
-// Wallet Address for Deposit
-export type WalletAddressDTO = {
-	address: string;
-};
+	const history = await getRewardsHistory(walletId);
 
-export const getWalletAddress = async (): Promise<WalletAddressDTO> => {
-	return await delayedValue(
-		{ address: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD73" },
-		500,
-	);
+	return history.map((h) => ({
+		id: h.id,
+		amount: h.amount,
+		currency: "IDR", // Assuming IDR for now
+		interestRate: 5.5, // Static APR for UI matching
+		periodStart: h.timestamp.getTime() - 30 * 24 * 60 * 60 * 1000,
+		periodEnd: h.timestamp.getTime(),
+		status: "credited",
+		timestamp: h.timestamp.getTime(),
+	}));
 };
 
 // Save Contact
 export type SaveContactDTO = {
 	name: string;
-   walletAddress: string;
+	walletAddress: string;
 };
 
 export const saveContact = async (data: SaveContactDTO): Promise<void> => {
-	// Mock implementation - in real app this would persist to backend
-	await delayedValue(undefined, 500);
-};
+	const response = await saveContactAction({
+		name: data.name,
+		walletAddress: data.walletAddress,
+	});
 
-// Mock transaction history data
-const mockTransactionHistory: TransactionRecord[] = [
-	{
-		id: "tx-001",
-		walletId: "mock-wallet-id",
-		type: "DEPOSIT",
-		amount: 5000000,
-		category: "Salary",
-		description: "Monthly salary deposit",
-		createdAt: new Date("2026-01-15T10:30:00Z"),
-	},
-	{
-		id: "tx-002",
-		walletId: "mock-wallet-id",
-		type: "WITHDRAWAL",
-		amount: 150000,
-		category: "Food",
-		description: "Grocery shopping",
-		createdAt: new Date("2026-01-18T14:20:00Z"),
-	},
-	{
-		id: "tx-003",
-		walletId: "mock-wallet-id",
-		type: "WITHDRAWAL",
-		amount: 500000,
-		category: "Transportation",
-		description: "Monthly transport pass",
-		createdAt: new Date("2026-01-20T09:15:00Z"),
-	},
-	{
-		id: "tx-004",
-		walletId: "mock-wallet-id",
-		type: "YIELD",
-		amount: 25000,
-		category: "Interest",
-		description: "Daily interest earned",
-		createdAt: new Date("2026-01-21T00:00:00Z"),
-	},
-	{
-		id: "tx-005",
-		walletId: "mock-wallet-id",
-		type: "WITHDRAWAL",
-		amount: 200000,
-		category: "Entertainment",
-		description: "Movie tickets and dinner",
-		createdAt: new Date("2026-01-22T19:45:00Z"),
-	},
-	{
-		id: "tx-006",
-		walletId: "mock-wallet-id",
-		type: "DEPOSIT",
-		amount: 1000000,
-		category: "Transfer",
-		description: "Received from friend",
-		createdAt: new Date("2026-01-23T16:30:00Z"),
-	},
-	{
-		id: "tx-007",
-		walletId: "mock-wallet-id",
-		type: "WITHDRAWAL",
-		amount: 75000,
-		category: "Shopping",
-		description: "Online purchase",
-		createdAt: new Date("2026-01-24T11:00:00Z"),
-	},
-	{
-		id: "tx-008",
-		walletId: "mock-wallet-id",
-		type: "YIELD",
-		amount: 18500,
-		category: "Interest",
-		description: "Daily interest earned",
-		createdAt: new Date("2026-01-25T00:00:00Z"),
-	},
-];
+	if (!response.success) {
+		throw new Error(response.error || "Failed to save contact");
+	}
+};
 
 // ============================================
 // Server Action Integration - Wallet Operations
 // ============================================
 
 // Get wallet balance and transaction history via server action
-export const getWalletBalance = async (walletId: string): Promise<BalanceResponse> => {
+export const getWalletBalance = async (
+	walletId: string,
+): Promise<BalanceResponse> => {
 	return await getExpenses({ walletId });
 };
 
@@ -285,40 +237,42 @@ export type WithdrawInput = {
 };
 
 // Withdraw funds via server action
-export const withdrawFunds = async (input: WithdrawInput): Promise<WalletResponse> => {
+export const withdrawFunds = async (
+	input: WithdrawInput,
+): Promise<WalletResponse> => {
 	return await withdrawAction(input);
 };
 
 export type GetTransactionHistoryInput = {
-   walletId: string;
-   start: string; // iso date string
-   end: string; // iso date string
-}
+	walletId: string;
+	start: string; // iso date string
+	end: string; // iso date string
+};
 
 export type GetTransactionHistoryOutput = {
-   transactions: TransactionRecord[];
-}
+	transactions: TransactionRecord[];
+};
 
+// Get transaction history via server action with date filtering
 export const getTransactionHistory = async ({
-	walletId, // Not used in mock - all transactions use same mock wallet
+	walletId,
 	start,
 	end,
 }: GetTransactionHistoryInput): Promise<GetTransactionHistoryOutput> => {
-	// Filter transactions by date range
-	const startDate = new Date(start);
-	const endDate = new Date(end);
-	
-	const filteredTransactions = mockTransactionHistory.filter((tx) => {
-		const txDate = new Date(tx.createdAt);
-		return txDate >= startDate && txDate <= endDate;
+	// Fetch transactions from server action with date filters
+	const response = await getExpenses({
+		walletId,
+		startDate: start,
+		endDate: end,
 	});
 
-	return await delayedValue(
-		{
-			transactions: filteredTransactions,
-		},
-		800,
-	);
+	if (response.error) {
+		throw new Error(response.error);
+	}
+
+	return {
+		transactions: response.history,
+	};
 };
 
 // ============================================
@@ -326,12 +280,16 @@ export const getTransactionHistory = async ({
 // ============================================
 
 // Get notifications for a user via server action
-export const fetchNotifications = async (userId: string): Promise<NotificationsResponse> => {
+export const fetchNotifications = async (
+	userId: string,
+): Promise<NotificationsResponse> => {
 	return await getNotificationsAction({ userId });
 };
 
 // Mark notification as read via server action
-export const markNotificationAsRead = async (notificationId: string): Promise<MarkNotificationReadResponse> => {
+export const markNotificationAsRead = async (
+	notificationId: string,
+): Promise<MarkNotificationReadResponse> => {
 	return await markNotificationReadAction({ notificationId });
 };
 
@@ -345,7 +303,9 @@ export const loginUser = async (input: LoginInput): Promise<AuthResponse> => {
 };
 
 // Register user via server action
-export const registerUser = async (input: RegisterInput): Promise<AuthResponse> => {
+export const registerUser = async (
+	input: RegisterInput,
+): Promise<AuthResponse> => {
 	return await registerAction(input);
 };
 
@@ -355,68 +315,56 @@ export const logoutUser = async (): Promise<AuthResponse> => {
 };
 
 // ============================================
-// Profile - Mock Implementation
-// When server actions are ready, replace with actual calls
+// Profile - Server Action Integration
 // ============================================
 
-// Profile response type
-export type ProfileResponse = {
-	email: string;
-	nickname: string;
+// Re-export types from server for UI consumption
+export type ProfileResponse = ServerProfileResponse;
+export type UpdateProfileInput = ServerUpdateProfileInput;
+export type UpdateProfileResponse = ServerUpdateProfileResponse;
+
+// Get profile data for a wallet via server action
+export const fetchProfile = async (
+	walletId: string,
+): Promise<ProfileResponse> => {
+	return await getProfileAction({ walletId });
+};
+
+// Update profile data via server action
+export const updateProfileData = async (
+	input: UpdateProfileInput,
+): Promise<UpdateProfileResponse> => {
+	return await updateProfileAction(input);
+};
+
+// Get wallet address for deposit (uses profile data)
+export const getWalletAddress = async (
+	walletId: string,
+): Promise<{ address: string }> => {
+	const profile = await getProfileAction({ walletId });
+	if (profile.error) {
+		throw new Error(profile.error);
+	}
+	return { address: profile.walletAddress };
+};
+
+// Get the currently active wallet for the session
+export const fetchCurrentWallet = async () => {
+	return await getCurrentWallet();
+};
+
+// Get the currently active user for the session
+export const fetchCurrentUser = async () => {
+	return await getCurrentUser();
+};
+
+export type SetupWalletInput = {
+	userId: string;
+	name: string;
+	emergencyEmail?: string;
 	dailyLimit: number;
-	emergencyEmail: string | null;
-	walletAddress: string;
-	error?: string;
-	message?: string;
 };
 
-// Update profile input type
-export type UpdateProfileInput = {
-	walletId: string;
-	nickname?: string;
-	dailyLimit?: number;
-	emergencyEmail?: string | null;
-};
-
-// Update profile response type
-export type UpdateProfileResponse = {
-	success: boolean;
-	error?: string;
-	message?: string;
-};
-
-// Mock profile data
-const mockProfileData: Omit<ProfileResponse, "error" | "message"> = {
-	email: "user@example.com",
-	nickname: "My Wallet",
-	dailyLimit: 1000000,
-	emergencyEmail: "emergency@example.com",
-	walletAddress: "0x742d35Cc6634C0532925a3b844Bc9e7595f2bD73",
-};
-
-// Get profile data for a wallet (mock implementation)
-export const fetchProfile = async (walletId: string): Promise<ProfileResponse> => {
-	// Mock delay to simulate network request
-	await new Promise((resolve) => setTimeout(resolve, 800));
-	
-	// TODO: Replace with server action call when ready
-	// return await getProfileAction({ walletId });
-	
-	return mockProfileData;
-};
-
-// Update profile data (mock implementation)
-export const updateProfileData = async (input: UpdateProfileInput): Promise<UpdateProfileResponse> => {
-	// Mock delay to simulate network request
-	await new Promise((resolve) => setTimeout(resolve, 1000));
-	
-	// TODO: Replace with server action call when ready
-	// return await updateProfileAction(input);
-	
-	console.log("Profile update mock - received:", input);
-	
-	return {
-		success: true,
-		message: "Profile updated successfully",
-	};
+export const setupWallet = async (input: SetupWalletInput): Promise<WalletResponse> => {
+	return await createWallet(input);
 };

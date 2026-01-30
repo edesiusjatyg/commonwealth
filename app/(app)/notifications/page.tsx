@@ -8,6 +8,7 @@ import {
 	useNotifications,
 	useMarkNotificationRead,
 } from "@/hooks/use-notifications";
+import { useUser } from "@/hooks/use-user";
 import { cn } from "@/lib/utils";
 import {
 	Bell,
@@ -87,7 +88,8 @@ function EmptyState() {
 }
 
 export default function NotificationsPage() {
-	const { data: notifications, isLoading, isError } = useNotifications();
+	const { data: user } = useUser();
+	const { data: notifications, isLoading, isError } = useNotifications(user?.id);
 	const markAsRead = useMarkNotificationRead();
 
 	const handleNotificationClick = (notificationId: string, isRead: boolean) => {

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useWalletAddress } from "@/hooks/use-wallet-address";
+import { useCurrentWallet } from "@/hooks/use-current-wallet";
 import { WalletAddressSkeleton } from "./wallet-address-skeleton";
 
 function truncateAddress(address: string): string {
@@ -15,9 +16,12 @@ function truncateAddress(address: string): string {
 }
 
 export function WalletAddressDisplay() {
-	const { data, isLoading, isError } = useWalletAddress();
+	const { data: wallet, isLoading: walletLoading } = useCurrentWallet();
+	const { data, isLoading, isError } = useWalletAddress(wallet?.id);
 
-	if (isLoading) return <WalletAddressSkeleton />;
+	if (walletLoading || isLoading) return <WalletAddressSkeleton />;
+
+
 	if (isError || !data) {
 		return (
 			<Card className="w-full">
