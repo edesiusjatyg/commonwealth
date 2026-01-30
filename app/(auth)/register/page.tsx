@@ -24,9 +24,11 @@ export default function RegisterPage() {
 		isPending,
 		registerAction,
 		password,
+		confirmPassword,
+		passwordsMatch,
 		allRequirementsMet,
 	} = useRegisterForm();
-
+   
 	return (
 		<main className="relative flex min-h-screen flex-col items-center bg-gradient-to-b from-indigo-50/50 via-white to-pink-50/50 px-6 py-12 overflow-hidden">
 			{/* Decorative purple circle - right side */}
@@ -42,17 +44,6 @@ export default function RegisterPage() {
 				{/* Form */}
 				<Form {...form}>
 					<form onSubmit={registerAction} className="w-full space-y-4">
-						{/* Username field with icon */}
-						<div className="relative">
-							<User className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-							<Input
-								type="text"
-								placeholder="Username"
-								disabled={isPending}
-								className="h-12 rounded-full border-gray-200 bg-white pl-12 shadow-sm"
-							/>
-						</div>
-
 						{/* Email field with icon */}
 						<FormField
 							control={form.control}
@@ -110,27 +101,71 @@ export default function RegisterPage() {
 									<FormMessage />
 
 									{/* Password strength indicator */}
-									{password.length > 0 && (
-										<div className="mt-2 space-y-1 px-2">
-											{passwordRequirements.map((req) => {
-												const met = req.test(password);
-												return (
-													<div
-														key={req.label}
-														className={cn(
-															"flex items-center gap-2 text-xs",
-															met ? "text-green-600" : "text-muted-foreground"
-														)}
-													>
-														{met ? (
-															<Check className="h-3 w-3" />
-														) : (
-															<X className="h-3 w-3" />
-														)}
-														{req.label}
-													</div>
-												);
-											})}
+									<div className="mt-2 space-y-1 px-2">
+										{passwordRequirements.map((req) => {
+											const met = req.test(password);
+											return (
+												<div
+													key={req.label}
+													className={cn(
+														"flex items-center gap-2 text-xs",
+														met ? "text-green-600" : "text-muted-foreground",
+													)}
+												>
+													{met ? (
+														<Check className="h-3 w-3" />
+													) : (
+														<X className="h-3 w-3" />
+													)}
+													{req.label}
+												</div>
+											);
+										})}
+									</div>
+								</FormItem>
+							)}
+						/>
+
+						{/* Confirm Password field with icon */}
+						<FormField
+							control={form.control}
+							name="confirmPassword"
+							render={({ field }) => (
+								<FormItem>
+									<FormControl>
+										<div className="relative">
+											<Lock className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+											<Input
+												type={showPassword ? "text" : "password"}
+												placeholder="Confirm Password"
+												{...field}
+												disabled={isPending}
+												className="h-12 rounded-full border-gray-200 bg-white pl-12 pr-12 shadow-sm"
+											/>
+										</div>
+									</FormControl>
+									<FormMessage />
+
+									{/* Password match indicator */}
+									{confirmPassword.length > 0 && (
+										<div className="mt-2 px-2">
+											<div
+												className={cn(
+													"flex items-center gap-2 text-xs",
+													passwordsMatch
+														? "text-green-600"
+														: "text-destructive",
+												)}
+											>
+												{passwordsMatch ? (
+													<Check className="h-3 w-3" />
+												) : (
+													<X className="h-3 w-3" />
+												)}
+												{passwordsMatch
+													? "Passwords match"
+													: "Passwords do not match"}
+											</div>
 										</div>
 									)}
 								</FormItem>
@@ -171,15 +206,15 @@ export default function RegisterPage() {
 							type="submit"
 							className="mt-6 h-12 w-full rounded-full bg-gradient-to-r from-violet-600 to-indigo-500 text-white font-semibold shadow-lg hover:from-violet-700 hover:to-indigo-600"
 							// className="mt-4 h-12 w-full rounded-full bg-gradient-to-r from-violet-600 to-indigo-500 text-white font-semibold shadow-lg hover:from-violet-700 hover:to-indigo-600 bg-opacity-100"
-							disabled={isPending || !agreedToTerms || !allRequirementsMet}
+							disabled={isPending || !allRequirementsMet}
 						>
 							{isPending ? (
 								<>
 									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-									Creating account...
+									Registering account...
 								</>
 							) : (
-								"Daftar"
+								"Register"
 							)}
 						</Button>
 

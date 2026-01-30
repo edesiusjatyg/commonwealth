@@ -14,16 +14,19 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTransferForm } from "@/hooks/use-transfer-form";
+import { useCurrentWallet } from "@/hooks/use-current-wallet";
 import { useRouter } from "next/navigation";
 import { ContactSelector } from "./contact-selector";
+import { cn } from "@/lib/utils";
 
 export function TransferForm() {
 	const router = useRouter();
+	const { data: wallet, isLoading: walletLoading } = useCurrentWallet();
+	
 	const {
 		form,
 		isPending,
 		transferAction,
-		// Save contact from hook
 		showSaveOption,
 		saveAsContact,
 		setSaveAsContact,
@@ -31,7 +34,17 @@ export function TransferForm() {
 		setContactName,
 		contactError,
 		resetSaveContact,
-	} = useTransferForm();
+		dailyLimitStatus,
+	} = useTransferForm(wallet?.id);
+
+	if (walletLoading) {
+		return <div>Loading wallet...</div>;
+	}
+
+	if (!wallet) {
+		return <div>No wallet found. Please create one.</div>;
+	}
+
 
 	const handleContactSelect = (address: string) => {
 		form.setValue("destinationAddress", address);
@@ -118,9 +131,23 @@ export function TransferForm() {
 										field.onChange(parseFloat(e.target.value) || 0)
 									}
 									disabled={isPending}
+									className={cn(
+										dailyLimitStatus.isOverLimit && "border-destructive focus-visible:ring-destructive",
+										dailyLimitStatus.isNearLimit && !dailyLimitStatus.isOverLimit && "border-amber-500 focus-visible:ring-amber-500"
+									)}
 								/>
 							</FormControl>
-							<FormDescription>Minimum transfer: 1 USDT</FormDescription>
+							{dailyLimitStatus.isOverLimit ? (
+								<p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+									Daily limit exceeded. Remaining: ${dailyLimitStatus.remaining}
+								</p>
+							) : dailyLimitStatus.isNearLimit ? (
+								<p className="text-[10px] font-bold text-amber-600 uppercase tracking-tight">
+									Near daily limit. Remaining: ${dailyLimitStatus.remaining}
+								</p>
+							) : (
+								<FormDescription>Minimum transfer: 1 USDT</FormDescription>
+							)}
 							<FormMessage />
 						</FormItem>
 					)}
@@ -199,8 +226,12 @@ export function TransferForm() {
 					>
 						Back
 					</Button>
-					<Button type="submit" disabled={isPending} className="flex-1">
-						{isPending ? "Processing..." : "Transfer"}
+					<Button 
+						type="submit" 
+						disabled={isPending || dailyLimitStatus.isOverLimit} 
+						className="flex-1"
+					>
+						{isPending ? "Processing..." : dailyLimitStatus.isOverLimit ? "Limit Exceeded" : "Transfer"}
 					</Button>
 				</div>
 			</form>

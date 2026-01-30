@@ -2,7 +2,7 @@
 // All server actions are exported from this file for clean imports
 
 // Auth actions
-export { login, logout, register } from "./auth";
+export { login, logout, register, getCurrentUser } from "./auth";
 export type { LoginInput, RegisterInput } from "./auth";
 
 // Wallet actions
@@ -12,6 +12,11 @@ export {
 	withdraw,
 	approveDailyLimit,
 	processReward,
+	getProfile,
+	updateProfile,
+	getRewardsHistory,
+	initiateTransfer,
+	getCurrentWallet,
 } from "./wallet";
 export type {
 	CreateWalletInput,
@@ -19,6 +24,10 @@ export type {
 	WithdrawInput,
 	ApproveDailyLimitInput,
 	ProcessRewardInput,
+	GetProfileInput,
+	UpdateProfileInput,
+	ProfileResponse,
+	UpdateProfileResponse,
 } from "./wallet";
 
 // Expenses actions
@@ -46,3 +55,7 @@ export type {
 
 // Onboarding actions
 export { getOnboardingSteps } from "./onboarding";
+
+// Contacts actions
+export { getContacts, saveContactAction } from "./contacts";
+export type { SaveContactInput, ContactDTO, SaveContactResponse } from "./contacts";

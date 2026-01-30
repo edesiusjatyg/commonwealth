@@ -30,13 +30,18 @@ const toPresentation = (data: TransferredAccountDTO): TransferredAccount => {
    }
 };
 
+import { useUser } from "./use-user";
+
 export const useTransferredAccounts = () => {
+	const { data: user } = useUser();
+	
 	return useQuery({
-		queryKey: ["transfer-history"],
+		queryKey: ["transfer-history", user?.id],
 		queryFn: () => getTransferredAccounts(),
-      select: (data) => {
-         return data.map(toPresentation);
-      },
+		enabled: !!user?.id,
+		select: (data) => {
+			return data.map(toPresentation);
+		},
 		retry: true,
 	});
 };

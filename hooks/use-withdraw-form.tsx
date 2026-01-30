@@ -4,9 +4,11 @@ import * as rpc from "@/rpc";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTransition } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
+import { useDailySpending } from "./use-daily-spending";
+import { useCurrentWallet } from "./use-current-wallet";
 
 // TODO: Replace with actual wallet ID from user context
 const MOCK_WALLET_ID = "mock-wallet-id";
@@ -47,10 +49,13 @@ const mapServerError = (error: string): WithdrawError => {
 	return { code: "SERVER_ERROR", message: error };
 };
 
-export const useWithdrawForm = (walletId?: string) => {
+export const useWithdrawForm = (walletId: string | undefined) => {
 	const [isPending, startTransition] = useTransition();
 	const queryClient = useQueryClient();
-	const effectiveWalletId = walletId || MOCK_WALLET_ID;
+
+	// Wallet & Spending hooks
+	const { data: wallet } = useCurrentWallet();
+	const { data: spendingData } = useDailySpending(wallet ?? undefined);
 
 	const form = useForm<WithdrawFormData>({
 		defaultValues: {
@@ -61,6 +66,29 @@ export const useWithdrawForm = (walletId?: string) => {
 		},
 		resolver: zodResolver(withdrawFormSchema),
 	});
+
+	// Watch amount reactively
+	const amount = useWatch({
+		control: form.control,
+		name: "amount",
+		defaultValue: 10,
+	});
+
+	// Daily Limit Validation
+	const dailyLimitStatus = (() => {
+		if (!spendingData) return { isOverLimit: false, isNearLimit: false, remaining: 0, maxDailySpending: 0 };
+		
+		const { currentSpending, maxDailySpending } = spendingData;
+		const potentialTotal = currentSpending + amount;
+		const remaining = Math.max(0, maxDailySpending - currentSpending);
+		
+		return {
+			isOverLimit: potentialTotal > maxDailySpending,
+			isNearLimit: potentialTotal >= maxDailySpending * 0.8 && potentialTotal <= maxDailySpending,
+			remaining,
+			maxDailySpending,
+		};
+	})();
 
 	const handleError = (error: WithdrawError) => {
 		switch (error.code) {
@@ -92,7 +120,7 @@ export const useWithdrawForm = (walletId?: string) => {
 			form.handleSubmit(async (data) => {
 				// Call RPC which calls server action
 				const response = await rpc.withdrawFunds({
-					walletId: effectiveWalletId,
+					walletId: walletId || "",
 					amount: data.amount,
 					category: data.bank,
 					password: data.password,
@@ -120,5 +148,6 @@ export const useWithdrawForm = (walletId?: string) => {
 		form,
 		isPending,
 		withdrawAction,
+		dailyLimitStatus,
 	};
 };

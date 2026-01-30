@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { WalletResponse } from "@/types";
+import { getCurrentUserId } from "@/lib/session";
 import { z } from "zod";
 import { computeWalletAddress, deployWalletOnChain } from "./chain";
 import { Address } from "viem";
@@ -267,8 +268,8 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 		if (spendingLimit > 0 && newSpendingToday > spendingLimit) {
 			return {
 				error:
-					"Daily limit exceeded. Please request approval from emergency contact.",
-				message: "Withdrawal failed",
+					"Daily limit exceeded.",
+				message: "Withdrawal failed, Daily limit exceeded. Please request approval from emergency contact.",
 			};
 		}
 
@@ -446,5 +447,284 @@ export async function processReward(
 			error: "Internal server error",
 			message: "System error",
 		};
+	}
+}
+
+// ============================================
+// Profile Management
+// ============================================
+
+// Profile schemas
+const getProfileSchema = z.object({
+	walletId: z.string().min(1, "Wallet ID is required"),
+});
+
+const updateProfileSchema = z.object({
+	walletId: z.string().min(1, "Wallet ID is required"),
+	nickname: z.string().min(1).optional(),
+	dailyLimit: z.number().nonnegative().optional(),
+	emergencyEmail: z.string().email().nullable().optional(),
+});
+
+// Profile input types
+export type GetProfileInput = z.infer<typeof getProfileSchema>;
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+// Profile response type
+export type ProfileResponse = {
+	email: string;
+	nickname: string;
+	dailyLimit: number;
+	emergencyEmail: string | null;
+	walletAddress: string;
+	error?: string;
+	message?: string;
+};
+
+// Update profile response type
+export type UpdateProfileResponse = {
+	success: boolean;
+	error?: string;
+	message?: string;
+};
+
+/**
+ * Get profile data for a wallet
+ */
+export async function getProfile(
+	input: GetProfileInput,
+): Promise<ProfileResponse> {
+	try {
+		const validatedData = getProfileSchema.safeParse(input);
+
+		if (!validatedData.success) {
+			return {
+				error: validatedData.error.issues[0].message,
+				email: "",
+				nickname: "",
+				dailyLimit: 0,
+				emergencyEmail: null,
+				walletAddress: "",
+			};
+		}
+
+		const { walletId } = validatedData.data;
+
+		const wallet = await prisma.wallet.findUnique({
+			where: { id: walletId },
+			include: { user: true },
+		});
+
+		if (!wallet) {
+			return {
+				error: "Wallet not found",
+				email: "",
+				nickname: "",
+				dailyLimit: 0,
+				emergencyEmail: null,
+				walletAddress: "",
+			};
+		}
+
+		return {
+			email: wallet.user.email || "",
+			nickname: wallet.name,
+			dailyLimit: Number(wallet.dailyLimit),
+			emergencyEmail: wallet.emergencyEmail,
+			walletAddress: wallet.address,
+		};
+	} catch (error: any) {
+		console.error("Get profile error:", error);
+		return {
+			error: "Internal server error",
+			email: "",
+			nickname: "",
+			dailyLimit: 0,
+			emergencyEmail: null,
+			walletAddress: "",
+		};
+	}
+}
+
+/**
+ * Update profile data for a wallet
+ */
+export async function updateProfile(
+	input: UpdateProfileInput,
+): Promise<UpdateProfileResponse> {
+	try {
+		const validatedData = updateProfileSchema.safeParse(input);
+
+		if (!validatedData.success) {
+			return {
+				success: false,
+				error: validatedData.error.issues[0].message,
+				message: "Validation failed",
+			};
+		}
+
+		const { walletId, nickname, dailyLimit, emergencyEmail } =
+			validatedData.data;
+
+		const wallet = await prisma.wallet.findUnique({
+			where: { id: walletId },
+		});
+
+		if (!wallet) {
+			return {
+				success: false,
+				error: "Wallet not found",
+				message: "Update failed",
+			};
+		}
+
+		// Build update data object with only provided fields
+		const updateData: {
+			name?: string;
+			dailyLimit?: number;
+			emergencyEmail?: string | null;
+		} = {};
+
+		if (nickname !== undefined) {
+			updateData.name = nickname;
+		}
+		if (dailyLimit !== undefined) {
+			updateData.dailyLimit = dailyLimit;
+		}
+		if (emergencyEmail !== undefined) {
+			updateData.emergencyEmail = emergencyEmail;
+		}
+
+		await prisma.wallet.update({
+			where: { id: walletId },
+			data: updateData,
+		});
+
+		return {
+			success: true,
+			message: "Profile updated successfully",
+		};
+	} catch (error: any) {
+		console.error("Update profile error:", error);
+		return {
+			success: false,
+			error: "Internal server error",
+			message: "System error",
+		};
+	}
+}
+
+/**
+ * Get yield history for a wallet
+ */
+export async function getRewardsHistory(walletId: string): Promise<any[]> {
+	try {
+		const history = await prisma.yieldHistory.findMany({
+			where: { walletId },
+			orderBy: { timestamp: "desc" },
+		});
+		return history.map(h => ({
+			id: h.id,
+			walletId: h.walletId,
+			amount: Number(h.amount),
+			timestamp: h.timestamp,
+		}));
+	} catch (error) {
+		console.error("Get rewards history error:", error);
+		return [];
+	}
+}
+
+/**
+ * Initiate an external transfer (recorded as a withdrawal)
+ */
+export async function initiateTransfer(input: {
+	walletId: string;
+	destinationAddress: string;
+	amount: number;
+	category: string;
+	description?: string;
+}): Promise<WalletResponse> {
+	try {
+		const { walletId, destinationAddress, amount, category, description } = input;
+
+		const wallet = await prisma.wallet.findUnique({
+			where: { id: walletId },
+		});
+
+		if (!wallet) {
+			return { error: "Wallet not found", message: "Transfer failed" };
+		}
+
+		// Calculate balance (simplified for this action)
+		const transactions = await prisma.transaction.findMany({ where: { walletId } });
+		const totalDeposits = transactions
+			.filter(t => t.type === "DEPOSIT" || t.type === "YIELD")
+			.reduce((sum, t) => sum + Number(t.amount), 0);
+		const totalWithdrawals = transactions
+			.filter(t => t.type === "WITHDRAWAL")
+			.reduce((sum, t) => sum + Number(t.amount), 0);
+		const balance = totalDeposits - totalWithdrawals;
+
+		if (amount > balance) {
+			return { error: "Insufficient balance", message: "Transfer failed" };
+		}
+
+		// Record the transaction as a WITHDRAWAL for now to reflect balance change
+		await prisma.transaction.create({
+			data: {
+				walletId,
+				type: "WITHDRAWAL",
+				amount,
+				category: category || "Transfer",
+				description: description || `Transfer to ${destinationAddress}`,
+			},
+		});
+
+		// Create notification
+		await prisma.notification.create({
+			data: {
+				userId: wallet.userId,
+				title: "Transfer Sent",
+				message: `You successfully sent ${amount} unit(s) to ${destinationAddress}.`,
+				type: "WITHDRAWAL_SUCCESS",
+			},
+		});
+
+		return {
+			message: "Transfer successful",
+			walletId: wallet.id,
+		};
+	} catch (error) {
+		console.error("Initiate transfer error:", error);
+		return { error: "Internal server error", message: "System error" };
+	}
+}
+
+/**
+ * Get the current user's primary wallet
+ */
+export async function getCurrentWallet(): Promise<{ id: string; address: string; name: string; dailyLimit: number; spendingToday: number } | null> {
+	try {
+		const userId = await getCurrentUserId();
+		if (!userId) return null;
+
+		const wallet = await prisma.wallet.findFirst({
+			where: { userId },
+			orderBy: { createdAt: "asc" },
+		});
+
+		if (!wallet) return null;
+
+		return {
+			id: wallet.id,
+			address: wallet.address,
+			name: wallet.name,
+			dailyLimit: Number(wallet.dailyLimit),
+			spendingToday: Number(wallet.spendingToday),
+		};
+	} catch (error) {
+		console.error("Get current wallet error:", error);
+		return null;
 	}
 }

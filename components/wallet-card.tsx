@@ -3,20 +3,15 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useWalletBalance } from "@/hooks/use-wallet-balance";
+import { useCurrentWallet } from "@/hooks/use-current-wallet";
 import { cn, formatBalance } from "@/lib/utils";
 import { EyeClosed, Eye } from "lucide-react";
 import { useState } from "react";
 
-// TODO: Replace with actual wallet ID from user context when available
-const MOCK_WALLET_ID = "mock-wallet-id";
-
-/** WalletCard component
-contains: 
-1. wallet number/id 
-2. wallet balance (can be hidden for privacy)
- */
 export function WalletCard({ className }: { className?: string }) {
-	const { data, isLoading, isError, error } = useWalletBalance(MOCK_WALLET_ID);
+	const { data: wallet } = useCurrentWallet();
+	const { data, isLoading, isError, error } = useWalletBalance(wallet?.id || "");
+
 	const [isHidden, setHidden] = useState(true);
 	const isCollapsed = false;
 	const toggleHidden = () => setHidden(!isHidden);

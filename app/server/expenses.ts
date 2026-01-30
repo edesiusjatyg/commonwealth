@@ -8,6 +8,8 @@ import { z } from "zod";
 // Input schema
 const getExpensesSchema = z.object({
 	walletId: z.string().min(1, "Wallet ID is required"),
+	startDate: z.string().optional(),
+	endDate: z.string().optional(),
 });
 
 // Input type
@@ -32,19 +34,36 @@ export async function getExpenses(
 			};
 		}
 
-		const { walletId } = validatedData.data;
+		const { walletId, startDate, endDate } = validatedData.data;
 
+		// Build where clause for all transactions (to calculate totals/balance correctly)
+		const whereClause: any = { walletId };
+		
+		// Build where clause for history (if dates provided)
+		const historyWhereClause: any = { walletId };
+		if (startDate || endDate) {
+			historyWhereClause.createdAt = {};
+			if (startDate) historyWhereClause.createdAt.gte = new Date(startDate);
+			if (endDate) historyWhereClause.createdAt.lte = new Date(endDate);
+		}
+
+		// Fetch filtered history
 		const transactions = await prisma.transaction.findMany({
-			where: { walletId },
+			where: historyWhereClause,
 			orderBy: { createdAt: "desc" },
 		});
 
-		type TransactionType = (typeof transactions)[number];
+		// Fetch all transactions for totals and balance calculation
+		const allTransactions = await prisma.transaction.findMany({
+			where: { walletId },
+		});
 
-		const totalDeposits = transactions
+		type TransactionType = (typeof allTransactions)[number];
+
+		const totalDeposits = allTransactions
 			.filter((t: TransactionType) => t.type === "DEPOSIT" || t.type === "YIELD")
 			.reduce((sum, t: TransactionType) => sum + Number(t.amount), 0);
-		const totalWithdrawals = transactions
+		const totalWithdrawals = allTransactions
 			.filter((t: TransactionType) => t.type === "WITHDRAWAL")
 			.reduce((sum, t: TransactionType) => sum + Number(t.amount), 0);
 

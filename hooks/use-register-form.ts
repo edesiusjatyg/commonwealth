@@ -65,6 +65,8 @@ export function useRegisterForm() {
 	// Password validation state
 	const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
 	const allRequirementsMet = passwordRequirements.every((req) => req.test(password));
+   // console.log("passwordMatch", passwordsMatch)
+   // console.log("allRequirementsMet", allRequirementsMet)
 
 	const registerAction = (e: React.FormEvent) => {
 		e.preventDefault();
