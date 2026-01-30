@@ -21,7 +21,8 @@ contract BlackWallet {
     uint256 public lastDay; // timestamp of the last reset
 
     // Emergency
-    address public emergencyContact;
+    mapping(address => bool) public isEmergencyContact;
+    address[] public emergencyContacts;
 
     // Transaction Logic
     struct Transaction {
@@ -63,10 +64,11 @@ contract BlackWallet {
         address[] memory _owners,
         uint256 _requiredSignatures,
         uint256 _dailyLimit,
-        address _emergencyContact
+        address[] memory _emergencyContacts
     ) {
         require(_owners.length > 0, "Owners required");
         require(_requiredSignatures > 0 && _requiredSignatures <= _owners.length, "Invalid required signatures");
+        require(_emergencyContacts.length > 0 && _emergencyContacts.length <= 2, "Invalid emergency contacts count");
 
         for (uint256 i = 0; i < _owners.length; i++) {
             address owner = _owners[i];
@@ -77,9 +79,17 @@ contract BlackWallet {
             owners.push(owner);
         }
 
+        for (uint256 i = 0; i < _emergencyContacts.length; i++) {
+            address contact = _emergencyContacts[i];
+            require(contact != address(0), "Invalid contact");
+            require(!isEmergencyContact[contact], "Contact not unique");
+            
+            isEmergencyContact[contact] = true;
+            emergencyContacts.push(contact);
+        }
+
         requiredSignatures = _requiredSignatures;
         dailyLimit = _dailyLimit;
-        emergencyContact = _emergencyContact;
         lastDay = block.timestamp / 1 days;
     }
 
@@ -163,7 +173,7 @@ contract BlackWallet {
     // Emergency Override (Only emergency contact can call this to reset limit or unlock)
     // For MVP: Emergency contact can just reset the spentToday amount allowin txn
     function resetDailySpent() external {
-        require(msg.sender == emergencyContact, "Not emergency contact");
+        require(isEmergencyContact[msg.sender], "Not emergency contact");
         spentToday = 0;
     }
 

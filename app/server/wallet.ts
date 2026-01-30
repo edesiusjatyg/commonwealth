@@ -96,13 +96,15 @@ export async function createWallet(
 		// "Sistem dapat memberi notifikasi status approval".
 		// For MVP, we pass the user itself or the relayer as the "Emergency Contact" on chain, 
 		// and the backend handles the email logic.
+		const emergencyContacts: Address[] = [emergencyContactAddr];
+
 		const salt = BigInt(Math.floor(Math.random() * 1000000));
 
 		const computedAddress = await computeWalletAddress(
 			owners,
 			requiredSignatures,
 			dailyLimitBI,
-			emergencyContactAddr,
+			emergencyContacts,
 			salt
 		);
 
@@ -111,7 +113,7 @@ export async function createWallet(
 			owners,
 			requiredSignatures,
 			dailyLimitBI,
-			emergencyContactAddr,
+			emergencyContacts,
 			salt
 		);
 

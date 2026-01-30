@@ -2,15 +2,20 @@ import { createPublicClient, createWalletClient, http, parseEther, Address } fro
 import { baseSepolia } from 'viem/chains';
 import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts';
 
-// Mock env vars for now - in production use process.env
-const FACTORY_ADDRESS = "0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f"; // From Foundry test output or deploy
-const RELAYER_PRIVATE_KEY = "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"; // Anvil #0
+// Load env vars
+const FACTORY_ADDRESS = (process.env.NEXT_PUBLIC_FACTORY_ADDRESS || "0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f") as Address;
+const RELAYER_PRIVATE_KEY = process.env.RELAYER_PRIVATE_KEY as `0x${string}`;
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'https://sepolia.base.org';
 
-const account = privateKeyToAccount(RELAYER_PRIVATE_KEY as `0x${string}`);
+if (!RELAYER_PRIVATE_KEY) {
+    console.warn("Missing RELAYER_PRIVATE_KEY env var, using unsafe default for development ONLY");
+}
+
+const account = privateKeyToAccount(RELAYER_PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80");
 
 export const publicClient = createPublicClient({
     chain: baseSepolia,
-    transport: http() // Defaults to public RPC
+    transport: http(RPC_URL)
 });
 
 export const walletClient = createWalletClient({
@@ -20,6 +25,7 @@ export const walletClient = createWalletClient({
 });
 
 // ABI for BlackWalletFactory
+// ABI for BlackWalletFactory
 export const FACTORY_ABI = [
     {
         "type": "function",
@@ -28,7 +34,7 @@ export const FACTORY_ABI = [
             { "name": "_owners", "type": "address[]", "internalType": "address[]" },
             { "name": "_requiredSignatures", "type": "uint256", "internalType": "uint256" },
             { "name": "_dailyLimit", "type": "uint256", "internalType": "uint256" },
-            { "name": "_emergencyContact", "type": "address", "internalType": "address" },
+            { "name": "_emergencyContacts", "type": "address[]", "internalType": "address[]" },
             { "name": "_salt", "type": "uint256", "internalType": "uint256" }
         ],
         "outputs": [{ "name": "wallet", "type": "address", "internalType": "address" }],
@@ -41,7 +47,7 @@ export const FACTORY_ABI = [
             { "name": "_owners", "type": "address[]", "internalType": "address[]" },
             { "name": "_requiredSignatures", "type": "uint256", "internalType": "uint256" },
             { "name": "_dailyLimit", "type": "uint256", "internalType": "uint256" },
-            { "name": "_emergencyContact", "type": "address", "internalType": "address" },
+            { "name": "_emergencyContacts", "type": "address[]", "internalType": "address[]" },
             { "name": "_salt", "type": "uint256", "internalType": "uint256" },
             { "name": "_deployer", "type": "address", "internalType": "address" }
         ],
@@ -54,7 +60,7 @@ export async function deployWalletOnChain(
     owners: Address[],
     requiredSignatures: bigint,
     dailyLimit: bigint,
-    emergencyContact: Address,
+    emergencyContacts: Address[],
     salt: bigint
 ): Promise<string> {
     try {
@@ -62,7 +68,7 @@ export async function deployWalletOnChain(
             address: FACTORY_ADDRESS,
             abi: FACTORY_ABI,
             functionName: 'createWallet',
-            args: [owners, requiredSignatures, dailyLimit, emergencyContact, salt]
+            args: [owners, requiredSignatures, dailyLimit, emergencyContacts, salt]
         });
 
         // In a real app we would wait for receipt and extract event.
@@ -98,14 +104,14 @@ export async function computeWalletAddress(
     owners: Address[],
     requiredSignatures: bigint,
     dailyLimit: bigint,
-    emergencyContact: Address,
+    emergencyContacts: Address[],
     salt: bigint
 ): Promise<string> {
     const address = await publicClient.readContract({
         address: FACTORY_ADDRESS,
         abi: FACTORY_ABI,
         functionName: 'computeAddress',
-        args: [owners, requiredSignatures, dailyLimit, emergencyContact, salt, FACTORY_ADDRESS]
+        args: [owners, requiredSignatures, dailyLimit, emergencyContacts, salt, FACTORY_ADDRESS]
     });
     return address;
 }
