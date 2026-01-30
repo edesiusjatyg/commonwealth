@@ -320,7 +320,7 @@ pip install -r requirements.txt
 python -m uvicorn app.main:app --reload
 ```
 
-The service will be available at `http://localhost:8000`
+The service will be available at `http://localhost:8001`
 
 ### Docker
 
@@ -332,13 +332,13 @@ docker-compose up --build
 
 This will start:
 - PostgreSQL database on port 5432
-- Market Sentiment Service on port 8000
+- Market Sentiment Service on port 8001
 
 To run only the API in Docker (assuming PostgreSQL is already running):
 
 ```bash
 docker build -t market-sentiment-service .
-docker run -p 8000:8000 --env-file .env market-sentiment-service
+docker run -p 8001:8001 --env-file .env market-sentiment-service
 ```
 
 ## Project Structure
@@ -569,8 +569,8 @@ Google Gemini 2.5 Flash is used for:
 ## API Documentation
 
 Interactive API documentation is available at:
-- Swagger UI: `http://localhost:8000/docs` (only when debug=True)
-- ReDoc: `http://localhost:8000/redoc` (only when debug=True)
+- Swagger UI: `http://localhost:8001/docs` (only when debug=True)
+- ReDoc: `http://localhost:8001/redoc` (only when debug=True)
 
 **Production Note:** API docs are disabled in production (debug=False) for security.
 

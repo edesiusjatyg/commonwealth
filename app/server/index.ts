@@ -34,12 +34,14 @@ export type {
 } from "./notifications";
 
 // AI actions
-export { chat, generateInsight, getInsight, getSentiment } from "./ai";
+export { chat, generateInsight, getInsight, getSentiment, getOracleInsight } from "./ai";
 export type {
 	ChatInput,
 	GenerateInsightInput,
 	GetInsightInput,
 	GetSentimentInput,
+	OracleInsightInput,
+	OracleInsightResponse,
 } from "./ai";
 
 // Onboarding actions

@@ -37,11 +37,24 @@ class Settings(BaseSettings):
     # Cache settings
     insight_cache_ttl_days: int = 7
     
+    # Data retention
+    data_retention_days: int = 90
+    llm_update_frequency: str = "weekly_and_monthly"
+    
     @property
     def database_url(self) -> str:
-        """Construct database URL."""
+        """Construct database URL for async operations."""
         return (
             f"postgresql+asyncpg://{self.postgres_user}:"
+            f"{self.postgres_password}@{self.postgres_host}:"
+            f"{self.postgres_port}/{self.postgres_db}"
+        )
+    
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        """Construct database URL for sync SQLAlchemy operations."""
+        return (
+            f"postgresql://{self.postgres_user}:"
             f"{self.postgres_password}@{self.postgres_host}:"
             f"{self.postgres_port}/{self.postgres_db}"
         )

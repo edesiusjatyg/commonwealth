@@ -31,7 +31,7 @@ const accountsVal = [
     ethAddress: "0xA4C2F9E1B6D8E5F7C3A0D9B2E6F1A8D5C7B4E9F",
   },
   {
-    name: "Charlie White",
+    name: "Charlie Kirk",
     accountNumber: "1124434455",
     ethAddress: "0x6E9F4C7A5B1D2F8E0A3C9B4E7D6F1A8C2E5B9D",
   },
@@ -79,17 +79,33 @@ export type WalletInsightDTO = {
 	insight: string;
 };
 
-const mockInsight =
-	"Portfolio summary: your wallet holds 3 main assets with a combined estimated value of ~$12,450. Performance: the portfolio is down 4.1% Portfolio summary: your wallet holds 3 main assets with a combined estimated value of ~$12,450. Performance: the portfolio is down 4.1%";
-// const mockInsight = "idafda";
+// Import from server actions
+import { getOracleInsight } from "@/app/server";
 
-export const getWalletInsight = async (): Promise<WalletInsightDTO> => {
-	return await delayedValue(
-		{
-			insight: mockInsight,
-		},
-		1000,
-	);
+// Default insight when user is not logged in or no data available
+const defaultInsight =
+	"Welcome to The Oracle. Connect your wallet to receive personalized insights about your portfolio and spending patterns.";
+
+export const getWalletInsight = async (userId?: string): Promise<WalletInsightDTO> => {
+	// If no userId provided, return default insight
+	if (!userId) {
+		return await delayedValue(
+			{ insight: defaultInsight },
+			300,
+		);
+	}
+
+	try {
+		const result = await getOracleInsight({ userId });
+		return {
+			insight: result.insight || defaultInsight,
+		};
+	} catch (error) {
+		console.error("Failed to fetch Oracle insight:", error);
+		return {
+			insight: defaultInsight,
+		};
+	}
 };
 
 // Rewards (Interest) types and RPC functions

@@ -4,15 +4,15 @@ Handles LLM updates on weekly and monthly changes.
 """
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
-from google import genai
+import google.generativeai as genai
 import logging
 import httpx
 
-from config import settings
-from schemas import UserInsight, WeeklyComparison, MonthlyComparison
-from database import db
-from services.comparison_service import ComparisonService
-from utils.llm_scheduler import LLMScheduler
+from ..config import settings
+from ..schemas import UserInsight, WeeklyComparison, MonthlyComparison
+from ..database import get_db
+from .comparison_service import ComparisonService
+from ..utils.llm_scheduler import LLMScheduler
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,9 @@ class InsightGenerator:
     def __init__(self):
         self.comparison_service = ComparisonService()
         self.llm_scheduler = LLMScheduler()
-        self.client = genai.Client(api_key=settings.gemini_api_key)
+        # Configure Gemini
+        genai.configure(api_key=settings.gemini_api_key)
+        self.model = genai.GenerativeModel(settings.gemini_model)
         self.sentiment_service_url = settings.market_sentiment_service_url
         self.gemini_api_key = settings.gemini_api_key
     
@@ -111,13 +113,13 @@ class InsightGenerator:
         )
         
         # Save to database (store as dict/json-compatible structure)
-        db.save_insight(user_id, user_insight.model_dump())
+        get_db().save_insight(user_id, user_insight.model_dump())
         
         return user_insight
     
     async def get_latest(self, user_id: str) -> Optional[UserInsight]:
         """Retrieve the latest insight for a user"""
-        record = db.get_latest_insight(user_id)
+        record = get_db().get_latest_insight(user_id)
         if not record:
             return None
 
@@ -157,18 +159,20 @@ class InsightGenerator:
             )
             
             # Call Gemini API
-            response = self.client.models.generate_content(
-                model=settings.gemini_model,
-                contents=prompt,
-                config={
-                    "temperature": settings.gemini_temperature,
-                    "max_output_tokens": settings.gemini_max_tokens,
-                    "response_mime_type": "application/json"
-                }
+            response = self.model.generate_content(
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=settings.gemini_temperature,
+                    max_output_tokens=settings.gemini_max_tokens,
+                )
             )
             
-            # Parse response
-            result = response.json()
+            # Parse response - try to extract JSON from text
+            import json
+            try:
+                result = json.loads(response.text)
+            except json.JSONDecodeError:
+                result = {}
             
             return {
                 "insights": result.get("insights", []),

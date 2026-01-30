@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "@/providers";
 import { ReactScan } from "@/components/react-scan";
+import { FloatingChatButton } from "@/components/chat/floating-chat-button";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -36,7 +37,10 @@ export default function RootLayout({
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
 			>
 				<ReactScan />
-				<Providers>{children}</Providers>
+				<Providers>
+					{children}
+					<FloatingChatButton />
+				</Providers>
 			</body>
 		</html>
 	);

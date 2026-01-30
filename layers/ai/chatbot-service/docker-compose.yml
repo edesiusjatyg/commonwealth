@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  chatbot:
+    build: .
+    container_name: ai-chatbot
+    ports:
+      - "4673:4673"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - USE_REDIS=true
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=production
+      - LOG_LEVEL=INFO
+    depends_on:
+      - redis
+    restart: unless-stopped
+    networks:
+      - chatbot-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: chatbot-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    networks:
+      - chatbot-network
+    command: redis-server --appendonly yes
+
+volumes:
+  redis-data:
+
+networks:
+  chatbot-network:
+    driver: bridge

@@ -1,0 +1,14 @@
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+pydantic>=2.10.0
+pydantic-settings>=2.7.0
+google-genai>=1.0.0
+redis>=5.0.1
+httpx>=0.26.0
+requests>=2.31.0
+structlog>=24.1.0
+python-dotenv>=1.0.0
+bleach>=6.1.0
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+pytest-cov>=4.1.0

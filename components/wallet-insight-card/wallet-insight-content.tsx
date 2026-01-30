@@ -12,13 +12,16 @@ import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 
+// Actual user ID from Neon database - in production, get from auth context
+const USER_ID = "cmkwpj2x800006uijtemzrsra";
+
 export function WalletInsightContent() {
 	const [isExpanded, setIsExpanded] = useState(false);
 
 	const { data, isLoading, error } = useQuery({
-		queryKey: ["walletInsight"],
+		queryKey: ["walletInsight", USER_ID],
 		queryFn: async () => {
-			const result = await getWalletInsight();
+			const result = await getWalletInsight(USER_ID);
 			return result.insight;
 		},
 	});
