@@ -4,9 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { queryKeys } from "@/lib/queryKeys";
 import * as rpc from "@/rpc";
 
-// TODO: Replace with actual wallet ID from user context when available
-const MOCK_WALLET_ID = "mock-wallet-id";
-// TODO: Replace with actual daily limit from wallet settings
 const DEFAULT_DAILY_LIMIT = 2000000;
 
 export type DailySpendingData = {
@@ -14,13 +11,17 @@ export type DailySpendingData = {
 	maxDailySpending: number;
 };
 
-export const useDailySpending = (walletId?: string) => {
-	const effectiveWalletId = walletId || MOCK_WALLET_ID;
-
+export const useDailySpending = (wallet: { id: string; dailyLimit: number; spendingToday: number } | undefined) => {
 	return useQuery({
-		queryKey: queryKeys.wallet.dailySpending(effectiveWalletId),
+		queryKey: queryKeys.wallet.dailySpending(wallet?.id || ""),
 		queryFn: async (): Promise<DailySpendingData> => {
-			const response = await rpc.getWalletBalance(effectiveWalletId);
+			if (!wallet) {
+				return { currentSpending: 0, maxDailySpending: DEFAULT_DAILY_LIMIT };
+			}
+			
+			// We can trust the wallet object's spendingToday if it was just fetched
+			// or we can calculate it from balance history for accuracy
+			const response = await rpc.getWalletBalance(wallet.id);
 
 			if (response.error) {
 				throw new Error(response.error);
@@ -39,9 +40,10 @@ export const useDailySpending = (walletId?: string) => {
 
 			return {
 				currentSpending: todayWithdrawals,
-				maxDailySpending: DEFAULT_DAILY_LIMIT,
+				maxDailySpending: wallet.dailyLimit > 0 ? wallet.dailyLimit : DEFAULT_DAILY_LIMIT,
 			};
 		},
 		retry: true,
+		enabled: !!wallet?.id,
 	});
 };

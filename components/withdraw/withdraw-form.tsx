@@ -20,6 +20,7 @@ import {
 	SelectValue,
 } from "@/components/ui/select";
 import { useWithdrawForm } from "@/hooks/use-withdraw-form";
+import { useCurrentWallet } from "@/hooks/use-current-wallet";
 
 const supportedBanks = [
 	"BCA (Bank Central Asia)",
@@ -31,9 +32,15 @@ const supportedBanks = [
 	"Danamon",
 ] as const;
 
+import { cn } from "@/lib/utils";
+
 export function WithdrawForm() {
-	const { form, isPending, withdrawAction } = useWithdrawForm();
+	const { data: wallet, isLoading: walletLoading } = useCurrentWallet();
+	const { form, isPending, withdrawAction, dailyLimitStatus } = useWithdrawForm(wallet?.id);
 	const router = useRouter();
+
+	if (walletLoading) return <div>Loading wallet...</div>;
+	if (!wallet) return <div>No wallet found. Please create one.</div>;
 
 	return (
 		<Form {...form}>
@@ -93,9 +100,23 @@ export function WithdrawForm() {
 									onChange={(e) =>
 										field.onChange(parseFloat(e.target.value) || 0)
 									}
+									className={cn(
+										dailyLimitStatus.isOverLimit && "border-destructive focus-visible:ring-destructive",
+										dailyLimitStatus.isNearLimit && !dailyLimitStatus.isOverLimit && "border-amber-500 focus-visible:ring-amber-500"
+									)}
 								/>
 							</FormControl>
-							<FormDescription>Minimum withdrawal: 10 USDT</FormDescription>
+							{dailyLimitStatus.isOverLimit ? (
+								<p className="text-[10px] font-bold text-destructive uppercase tracking-tight">
+									Daily limit exceeded. Remaining: ${dailyLimitStatus.remaining}
+								</p>
+							) : dailyLimitStatus.isNearLimit ? (
+								<p className="text-[10px] font-bold text-amber-600 uppercase tracking-tight">
+									Near daily limit. Remaining: ${dailyLimitStatus.remaining}
+								</p>
+							) : (
+								<FormDescription>Minimum withdrawal: 10 USDT</FormDescription>
+							)}
 							<FormMessage />
 						</FormItem>
 					)}
@@ -137,8 +158,12 @@ export function WithdrawForm() {
 					>
 						Back
 					</Button>
-					<Button type="submit" disabled={isPending} className="flex-1">
-						{isPending ? "Processing..." : "Withdraw"}
+					<Button 
+						type="submit" 
+						disabled={isPending || dailyLimitStatus.isOverLimit} 
+						className="flex-1"
+					>
+						{isPending ? "Processing..." : dailyLimitStatus.isOverLimit ? "Limit Exceeded" : "Withdraw"}
 					</Button>
 				</div>
 			</form>
