@@ -6,6 +6,7 @@ import { AuthResponse } from "@/types";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { generateAccount } from "./chain";
+import { encrypt } from "@/lib/crypto";
 
 
 
@@ -141,6 +142,7 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 		const passwordHash = await bcrypt.hash(password, 10);
 
 		const { privateKey, address: eoaAddress } = generateAccount();
+		const encryptedKey = encrypt(privateKey);
 
 		const user = await prisma.user.create({
 			data: {
@@ -148,7 +150,7 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 				passwordHash,
 				baseSocialId,
 				eoaAddress,
-				encryptedKey: privateKey, // In prod, encrypt this!
+				encryptedKey: encryptedKey,
 			},
 		});
 
