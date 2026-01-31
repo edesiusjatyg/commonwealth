@@ -20,7 +20,6 @@ import { toast } from "sonner";
 
 export default function RegisterPage() {
 	const [showPassword, setShowPassword] = useState(false);
-	const [agreedToTerms, setAgreedToTerms] = useState(false);
 	const {
 		form,
 		isPending,
@@ -30,16 +29,6 @@ export default function RegisterPage() {
 		passwordsMatch,
 		allRequirementsMet,
 	} = useRegisterForm();
-	const searchParams = useSearchParams();
-
-	// Show warning toast if user is already authenticated
-	useEffect(() => {
-		if (searchParams.get("toast") === "already-authenticated") {
-			toast.warning("Already Logged In", {
-				description: "You are already authenticated. Redirected to home.",
-			});
-		}
-	}, [searchParams]);
    
 	return (
 		<main className="relative flex min-h-screen flex-col items-center bg-gradient-to-b from-indigo-50/50 via-white to-pink-50/50 px-6 py-12 overflow-hidden">
