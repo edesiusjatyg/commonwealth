@@ -18,6 +18,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
 	title: "Common Wealth",
 	description: "Common Wealth is a human-first crypto wallet with built-in safety controls, financial tracking, and AI-assisted insights",
+	other: {
+	    'base:app_id': '696b1308c0ab25addaaaf1e7',
+	},
 };
 
 export default function RootLayout({
@@ -29,9 +32,9 @@ export default function RootLayout({
 		<html lang="en">
          <head>
             <meta
-            name="base:app_id"
-            content="6978dfc33a92926b661fd891"
-            />
+			  name="base:app_id"
+			  content="696b1308c0ab25addaaaf1e7"
+			/>
          </head>
 			<body
 				className={`${geistSans.variable} ${geistMono.variable} antialiased`}
