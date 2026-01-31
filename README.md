@@ -1,34 +1,46 @@
 # BlackWallet
 
-![Project Status](https://img.shields.io/badge/status-active_development-blue?style=for-the-badge)
+[![Try Live App](https://img.shields.io/badge/Try_Live_App-commonwealth--beta.vercel.app-success?style=for-the-badge&logo=vercel)](https://commonwealth-beta.vercel.app)
 ![License](https://img.shields.io/badge/license-Private-red?style=for-the-badge)
 ![Next.js](https://img.shields.io/badge/Next.js-16.1-black?style=for-the-badge&logo=next.js)
 ![Base](https://img.shields.io/badge/Base-Layer%202-blue?style=for-the-badge)
 ![AI Powered](https://img.shields.io/badge/AI-Gemini%20Powered-orange?style=for-the-badge)
 
-BlackWallet is a next-generation decentralized trading platform built on the **Base Layer 2** blockchain. It combines professional-grade crypto trading tools with advanced **AI-driven market sentiment analysis** to empower traders with real-time insights.
+**Access the platform now at [https://commonwealth-beta.vercel.app](https://commonwealth-beta.vercel.app)**
 
-Designed for performance and scalability, BlackWallet leverages a microservices architecture to deliver a seamless user experience, integrating direct smart contract interactions with powerful off-chain analytics.
+BlackWallet is a next-generation financial platform built to empower you with clarity and control. By combining professional-grade tools with advanced AI insights, we help you navigate the digital asset landscape with confidence.
 
 ---
 
-## Key Features
+## Key Benefits
 
-### Core Trading Engine
-- **Base Layer 2 Integration**: Lightning-fast, low-cost execution on the Base network.
-- **Smart Order Routing**: Optimized trade execution using **0x API** and **Uniswap V3** protocols.
-- **Interactive Charting**: Professional-grade charts powered by TradingView's Lightweight Charts and Recharts.
-- **Multi-Wallet Support**: Seamless connection with Coinbase Wallet, MetaMask, and other Web3 wallets via Wagmi/Viem.
+### 📊 Financial Awareness
+Gain a comprehensive understanding of your portfolio. BlackWallet provides a unified view of your assets, helping you track performance and manage your financial health with precision on the Base network.
 
-### AI Intelligence Layer
-- **Market Sentiment Analysis**: Real-time evaluation of market trends using Gemini AI.
-- **Personalized User Insights**: Behavioral analytics to tailor the trading experience.
-- **Smart Chat Assistant**: Integrated AI chatbot for instant support and market queries.
+### 🛡️ Financial Safety
+Put yourself in a safe financial position. We prioritize security and self-custody, giving you full control over your assets while utilizing secure, decentralized protocols to protect your wealth.
 
-### Robust Architecture
-- **Microservices Design**: Decoupled AI services running in isolated Docker containers for maximum reliability.
-- **Secure Authentication**: Custom authentication flows with JWT support.
-- **Type-Safe Development**: Full TypeScript integration across the full stack.
+### 🧠 Informed Investment Decisions
+Make moves based on data, not just intuition. Leveraged by Google Gemini AI, our platform provides real-time market sentiment analysis and intelligent insights, enabling you to make smarter, more informed investment choices.
+
+---
+
+## Features
+
+### Advanced Trading & Management
+- **High-Speed Execution**: Fast, low-cost interactions on the Base Layer 2 network.
+- **Smart Optimization**: Efficient trade routing using top-tier protocols like 0x API and Uniswap V3.
+- **Professional Charting**: Interactive, real-time visual tools to analyze market trends effectively.
+- **Universal Connectivity**: Securely connect with trusted wallets including Coinbase Wallet and MetaMask.
+
+### AI-Powered Intelligence
+- **Market Sentinel**: Automated analysis of market trends to highlight potential opportunities and risks.
+- **Personalized Insights**: Tailored data to suit your trading behavior and goals.
+- **Smart Assistant**: An integrated AI companion to assist with market queries and platform support.
+
+---
+
+## Technical Overview
 
 ---
 
@@ -71,76 +83,6 @@ blackwallet/
 ├── prisma/               # Database Schema & Migrations
 ├── public/               # Static Assets
 └── types/                # Global Type Definitions
-```
-
----
-
-## Getting Started
-
-### Prerequisites
-Ensure you have the following installed on your machine:
-- **Node.js**: v20+
-- **Docker**: For running AI services and databases.
-- **Foundry**: For smart contract development (optional).
-- **Git**
-
-### Installation
-
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/your-org/blackwallet.git
-    cd blackwallet
-    ```
-
-2.  **Install Frontend Dependencies**
-    ```bash
-    npm install
-    ```
-
-3.  **Environment Configuration**
-    Create a `.env.local` file in the root directory and configure your keys:
-    ```env
-    DATABASE_URL="postgresql://..."
-    NEXT_PUBLIC_WALLET_CONNECT_ID="..."
-    GEMINI_API_KEY="..."
-    # Add other service keys as needed
-    ```
-
-4.  **Initialize Database**
-    ```bash
-    npx prisma generate
-    npx prisma db push
-    ```
-
-### Running the Application
-
-**Development Server:**
-```bash
-npm run dev
-```
-The application will be available at `http://localhost:3000`.
-
-### Running AI Services
-To start the backend AI services (Sentiment Analysis, Chatbot, etc.):
-
-```bash
-cd layers/ai/market-sentiment-service
-docker-compose up -d
-```
-Repeat for other services in `market-sentiment-service` or `chatbot-service` as required.
-
----
-
-## Testing
-
-We use **Vitest** for unit and integration testing.
-
-```bash
-# Run all tests
-npm test
-
-# Run integration tests
-npm run test:integration
 ```
 
 ---
