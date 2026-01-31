@@ -17,9 +17,9 @@ model User {
   onboarded     Boolean        @default(false)
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
+  contacts      Contact[]
   notifications Notification[]
   wallets       Wallet[]
-  contacts      Contact[]
 }
 
 model Wallet {
@@ -84,6 +84,15 @@ model user_insights {
   @@index([user_id], map: "ix_user_insights_user_id")
 }
 
+model Contact {
+  id         String   @id @default(cuid())
+  userId     String
+  name       String
+  ethAddress String
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id])
+}
+
 enum TransactionType {
   DEPOSIT
   WITHDRAWAL
@@ -99,13 +108,3 @@ enum NotificationType {
   TOKEN_PURCHASE
   TOKEN_SALE
 }
-
-model Contact {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
-  name        String
-  ethAddress  String
-  createdAt   DateTime @default(now())
-}
-

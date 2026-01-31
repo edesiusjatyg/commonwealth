@@ -34,9 +34,11 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 		e.preventDefault();
 
 		updateProfile.mutate({
-			walletId,
 			nickname: nickname !== profile.nickname ? nickname : undefined,
-			dailyLimit: dailyLimit !== profile.dailyLimit.toString() ? Number(dailyLimit) : undefined,
+			dailyLimit:
+				dailyLimit !== profile.dailyLimit.toString()
+					? Number(dailyLimit)
+					: undefined,
 		});
 	};
 

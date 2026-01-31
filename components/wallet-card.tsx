@@ -71,8 +71,8 @@ export function WalletCard({ className }: { className?: string }) {
 			? Math.min((currentSpending / maxDailySpending) * 100, 100)
 			: 0;
 	const isNearLimit = currentSpending >= maxDailySpending * 0.8;
-	// const isLocked = currentSpending >= maxDailySpending;
-	const isLocked = true;
+	const isLocked = currentSpending >= maxDailySpending;
+	// const isLocked = true;
 
 	const handleRequestApproval = () => {
 		requestApproval.mutate();

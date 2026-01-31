@@ -849,6 +849,8 @@ export async function getCurrentWallet(): Promise<{
 		const userId = await getCurrentUserId();
 		if (!userId) return null;
 
+      console.debug("Fetching wallet for userId:", userId);
+
 		const wallet = await prisma.wallet.findFirst({
 			where: { userId },
 			orderBy: { createdAt: "asc" },

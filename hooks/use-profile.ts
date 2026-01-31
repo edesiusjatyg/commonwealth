@@ -1,59 +1,92 @@
 "use client";
 
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { queryKeys } from "@/lib/queryKeys";
-import * as rpc from "@/rpc";
-import type { UpdateProfileInput } from "@/rpc";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { queryKeys } from "@/lib/queryKeys";
+import type { UpdateProfileInput } from "@/rpc";
+import * as rpc from "@/rpc";
+import { useCurrentWallet } from "./use-current-wallet";
+import { useUser } from "./use-user";
 
 // UI-friendly profile type
 export type Profile = {
+	walletId: string;
 	email: string;
 	nickname: string;
 	dailyLimit: number;
-	emergencyEmail: string | null;
+	emergencyContacts: Array<{
+		id: string;
+		email: string;
+		name: string | null;
+	}>;
 	walletAddress: string;
 };
 
 /**
- * Hook to fetch profile data for a wallet
+ * Hook to fetch profile data
+ * Consolidates data from getCurrentWallet, getCurrentUser, and getProfile
  * Follows architecture: UI → Hook → RPC → Server Action
  */
-export function useProfile(walletId?: string) {
-	return useQuery({
-		queryKey: queryKeys.profile.detail(walletId),
-		queryFn: async (): Promise<Profile> => {
-			if (!walletId) {
-				throw new Error("Wallet ID is required");
-			}
-			const response = await rpc.fetchProfile(walletId);
+export function useProfile() {
+	const { data: wallet } = useCurrentWallet();
+	const { data: user } = useUser();
 
-			if (response.error) {
-				throw new Error(response.error);
+	return useQuery({
+		queryKey: queryKeys.profile.detail(wallet?.id),
+		queryFn: async (): Promise<Profile> => {
+			if (!wallet?.id) {
+				throw new Error("No active wallet found");
+			}
+
+			// Fetch full profile data (includes emergency contacts)
+			const profileData = await rpc.fetchProfile(wallet.id);
+
+			if (profileData.error) {
+				throw new Error(profileData.error);
 			}
 
 			return {
-				email: response.email,
-				nickname: response.nickname,
-				dailyLimit: response.dailyLimit,
-				emergencyEmail: response.emergencyEmail,
-				walletAddress: response.walletAddress,
+				walletId: wallet.id,
+				email: profileData.email,
+				nickname: profileData.nickname,
+				dailyLimit: profileData.dailyLimit,
+				emergencyContacts: profileData.emergencyContacts,
+				walletAddress: profileData.walletAddress,
 			};
 		},
-		enabled: !!walletId,
+		enabled: !!wallet?.id && !!user,
+		// Use data from getCurrentWallet as initial data for faster loading
+		placeholderData: wallet
+			? {
+					walletId: wallet.id || "",
+					email: user?.email || "",
+					nickname: wallet.name,
+					dailyLimit: wallet.dailyLimit,
+					emergencyContacts: [],
+					walletAddress: wallet.address,
+				}
+			: undefined,
 	});
 }
 
 /**
  * Hook to update profile data
- * Invalidates profile query on success
+ * Invalidates both profile and wallet queries on success
  */
 export function useUpdateProfile() {
 	const queryClient = useQueryClient();
+	const { data: wallet } = useCurrentWallet();
 
 	return useMutation({
-		mutationFn: async (input: UpdateProfileInput) => {
-			const response = await rpc.updateProfileData(input);
+		mutationFn: async (input: Omit<UpdateProfileInput, "walletId">) => {
+			if (!wallet?.id) {
+				throw new Error("No active wallet found");
+			}
+
+			const response = await rpc.updateProfileData({
+				...input,
+				walletId: wallet.id,
+			});
 
 			if (response.error) {
 				throw new Error(response.error);
@@ -61,10 +94,13 @@ export function useUpdateProfile() {
 
 			return response;
 		},
-		onSuccess: (_, variables) => {
-			// Invalidate profile query to refetch fresh data
+		onSuccess: () => {
+			// Invalidate both profile and wallet queries to refetch fresh data
 			queryClient.invalidateQueries({
-				queryKey: queryKeys.profile.detail(variables.walletId),
+				queryKey: queryKeys.profile.detail(wallet?.id),
+			});
+			queryClient.invalidateQueries({
+				queryKey: ["current-wallet"],
 			});
 			toast.success("Profile updated successfully");
 		},

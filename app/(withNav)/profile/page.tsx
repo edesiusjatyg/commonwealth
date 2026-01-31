@@ -7,11 +7,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RefreshCw } from "lucide-react";
 
-// Mock wallet ID for development - in production this would come from auth context
-const MOCK_WALLET_ID = "mock-wallet-id";
-
 export default function ProfilePage() {
-	const { data: profile, isLoading, error, refetch } = useProfile(MOCK_WALLET_ID);
+	const { data: profile, isLoading, error, refetch } = useProfile();
 
 	// 1. Loading state
 	if (isLoading) {
@@ -53,5 +50,5 @@ export default function ProfilePage() {
 	}
 
 	// 4. Success state
-	return <ProfileContent profile={profile} walletId={MOCK_WALLET_ID} />;
+	return <ProfileContent profile={profile} walletId={profile.walletId} />;
 }

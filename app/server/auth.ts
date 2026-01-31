@@ -9,7 +9,6 @@ import { generateAccount } from "./chain";
 import { encrypt } from "@/lib/crypto";
 
 
-
 // Input schemas
 const loginSchema = z
 	.object({
@@ -154,6 +153,9 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 			},
 		});
 
+		// Set encrypted session cookie
+		await setSessionCookie(user.id);
+
 		return {
 			message: "User registered successfully",
 			userId: user.id,
@@ -172,7 +174,12 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 export async function getCurrentUser(): Promise<{ id: string; email: string | null; onboarded: boolean } | null> {
 	try {
 		const userId = await getCurrentUserId();
-		if (!userId) return null;
+		if (!userId) {
+			console.warn("[getCurrentUser] Current userId is missing:", userId);
+			return null;
+		}
+
+		console.log("[getCurrentUser] Found userId:", userId);
 
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
@@ -183,9 +190,22 @@ export async function getCurrentUser(): Promise<{ id: string; email: string | nu
 			},
 		});
 
+		if (user) {
+			console.log("[getCurrentUser] User found:", {
+				id: user.id,
+				email: user.email,
+				onboarded: user.onboarded,
+			});
+		} else {
+			console.warn(
+				"[getCurrentUser] No user found in database for userId:",
+				userId,
+			);
+		}
+
 		return user;
 	} catch (error) {
-		console.error("Get current user error:", error);
+		console.error("[getCurrentUser] Error:", error);
 		return null;
 	}
 }

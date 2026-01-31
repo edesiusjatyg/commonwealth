@@ -27,10 +27,10 @@ export function OnboardingFlow() {
     setSelectedIndex(emblaApi.selectedScrollSnap());
   }, [emblaApi]);
 
-  // prefetch for instant navigation 
-  useEffect(() => {
-    router.prefetch('/init-wallet');
-  }, [router]);
+//   // prefetch for instant navigation 
+//   useEffect(() => {
+//     router.prefetch('/init-wallet');
+//   }, [router]);
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -50,6 +50,7 @@ export function OnboardingFlow() {
   }, [emblaApi]);
 
   const handleFinish = () => {
+    router.refresh();
     router.push('/init-wallet');
   };
 
