@@ -3,15 +3,23 @@ import { baseSepolia } from 'viem/chains';
 import { privateKeyToAccount, generatePrivateKey } from 'viem/accounts';
 
 // Load env vars
-const FACTORY_ADDRESS = (process.env.NEXT_PUBLIC_FACTORY_ADDRESS || "0x5615dEB798BB3E4dFa0139dFa1b3D433Cc23b72f") as Address;
+const FACTORY_ADDRESS = process.env.NEXT_PUBLIC_FACTORY_ADDRESS as Address;
 const RELAYER_PRIVATE_KEY = process.env.RELAYER_PRIVATE_KEY as `0x${string}`;
-const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL || 'https://sepolia.base.org';
+const RPC_URL = process.env.NEXT_PUBLIC_RPC_URL;
 
-if (!RELAYER_PRIVATE_KEY) {
-    console.warn("Missing RELAYER_PRIVATE_KEY env var, using unsafe default for development ONLY");
+if (!FACTORY_ADDRESS) {
+    console.warn("Missing FACTORY_ADDRESS env var");
 }
 
-const account = privateKeyToAccount(RELAYER_PRIVATE_KEY || "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80");
+if (!RELAYER_PRIVATE_KEY) {
+    console.warn("Missing RELAYER_PRIVATE_KEY env var");
+}
+
+if (!RPC_URL) {
+    console.warn("Missing RPC_URL env var");
+}
+
+const account = privateKeyToAccount(RELAYER_PRIVATE_KEY);
 
 export const publicClient = createPublicClient({
     chain: baseSepolia,
@@ -71,19 +79,19 @@ export async function deployWalletOnChain(
             args: [owners, requiredSignatures, dailyLimit, emergencyContacts, salt]
         });
 
-        // In a real app we would wait for receipt and extract event.
-        // For now, we simulate success or return the hash.
-        // But we actually need the ADDRESS.
-        // The factory should verify address or we calculate it.
-        // For MVP, since we don't have a live chain listener, we might just assume success 
-        // and calculate the address using a computeAddress method if available, 
-        // OR just return the txHash and update the DB later.
+        console.log(`Transaction sent: ${hash}. Waiting for confirmation...`);
 
-        // HOWEVER, the `createWallet` function needs to return an address to store in DB within the same request?
-        // Ideally we use `computeAddress` first aka `getWalletAddress` then deploy.
+        const receipt = await publicClient.waitForTransactionReceipt({
+            hash,
+            confirmations: 1
+        });
 
-        // For simplicity in this mock environment, we return a mock address if chain is not reachable,
-        // or the actual address if we could read it.
+        if (receipt.status !== 'success') {
+            throw new Error(`Transaction failed with status: ${receipt.status}`);
+        }
+
+        console.log(`Transaction confirmed: ${hash}`);
+
         return hash;
     } catch (e) {
         console.error("Chain deployment failed", e);
@@ -111,7 +119,7 @@ export async function computeWalletAddress(
         address: FACTORY_ADDRESS,
         abi: FACTORY_ABI,
         functionName: 'computeAddress',
-        args: [owners, requiredSignatures, dailyLimit, emergencyContacts, salt, FACTORY_ADDRESS]
+        args: [owners, requiredSignatures, dailyLimit, emergencyContacts, salt, account.address]
     });
     return address;
 }
