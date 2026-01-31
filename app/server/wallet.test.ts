@@ -5,28 +5,28 @@ import { computeWalletAddress, deployWalletOnChain } from "./chain";
 
 // Mock dependencies
 vi.mock("@/lib/prisma", () => ({
-	prisma: {
-		user: {
-			findUnique: vi.fn(),
-			update: vi.fn(),
-		},
-		wallet: {
-			create: vi.fn(),
-			findUnique: vi.fn(),
-			update: vi.fn(),
-		},
-		notification: {
-			create: vi.fn(),
-		},
-		transaction: {
-			create: vi.fn(),
-		},
-	},
+    prisma: {
+        user: {
+            findUnique: vi.fn(),
+            update: vi.fn(),
+        },
+        wallet: {
+            create: vi.fn(),
+            findUnique: vi.fn(),
+            update: vi.fn(),
+        },
+        notification: {
+            create: vi.fn(),
+        },
+        transaction: {
+            create: vi.fn(),
+        },
+    },
 }));
 
 vi.mock("./chain", () => ({
-	computeWalletAddress: vi.fn(),
-	deployWalletOnChain: vi.fn(),
+    computeWalletAddress: vi.fn(),
+    deployWalletOnChain: vi.fn(),
 }));
 
 describe("Wallet Server Actions", () => {
