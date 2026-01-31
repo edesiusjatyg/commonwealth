@@ -1,3 +1,5 @@
+import { AlertCircle, Wallet } from "lucide-react";
+import { Cell, Label, Pie, PieChart } from "recharts";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -5,11 +7,7 @@ import {
 	ChartTooltip,
 	ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Wallet } from "lucide-react";
-import { Cell, Label, Pie, PieChart } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 import type { ExpenseBreakdownItem } from "@/hooks/use-expense-breakdown";
 
 interface BudgetChartProps {
@@ -48,12 +46,21 @@ export function BudgetChart({
 		return (
 			<Card className="border-0 bg-transparent shadow-none">
 				<CardContent className="pt-6">
-					<Alert>
-						<AlertCircle className="h-4 w-4" />
-						<AlertDescription>
-							No expenses found for this month. Start tracking your spending!
-						</AlertDescription>
-					</Alert>
+					<div className="relative flex flex-col items-center">
+						{/* Empty state circle matching pie chart dimensions */}
+						<div className="relative flex h-[220px] w-[220px] items-center justify-center">
+							<div className="absolute inset-0 rounded-full border-2 border-black/8 m-[-10] bg-muted/50 border-dashed" />
+							<div className="relative z-10 flex flex-col items-center justify-center text-center">
+								<AlertCircle className="mb-2 h-8 w-8 text-muted-foreground" />
+								<p className="font-medium text-foreground text-sm">
+									No Expenses
+								</p>
+								<p className="mt-1 text-muted-foreground text-xs">
+									Start tracking your spending
+								</p>
+							</div>
+						</div>
+					</div>
 				</CardContent>
 			</Card>
 		);
