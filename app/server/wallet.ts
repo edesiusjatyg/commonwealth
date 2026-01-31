@@ -486,7 +486,7 @@ export async function requestDailyLimitUnlock(
 			},
 		});
 
-		const approvalLink = `${process.env.NEXT_PUBLIC_APP_URL}/approve/${walletId}?code=${approvalToken}`;
+		const approvalLink = `${process.env.NEXT_PUBLIC_APP_URL}/api/approve?walletId=${walletId}&code=${approvalToken}`;
 
 		for (const email of wallet.emergencyEmail) {
 			await sendApprovalEmail(email, wallet.name, approvalLink);
