@@ -4,12 +4,21 @@ import { ChatResponse, InsightResponse, SentimentResponse } from "@/types";
 import axios from "axios";
 import { z } from "zod";
 
-const INSIGHTS_SERVICE_URL =
-	process.env.USER_INSIGHTS_SERVICE_URL || "http://localhost:8002";
-const SENTIMENT_SERVICE_URL =
-	process.env.MARKET_SENTIMENT_SERVICE_URL || "http://localhost:8001";
-const CHATBOT_SERVICE_URL =
-	process.env.CHATBOT_SERVICE_URL || "http://localhost:8000";
+const INSIGHTS_SERVICE_URL = process.env.USER_INSIGHTS_SERVICE_URL;
+const SENTIMENT_SERVICE_URL = process.env.MARKET_SENTIMENT_SERVICE_URL;
+const CHATBOT_SERVICE_URL = process.env.CHATBOT_SERVICE_URL;
+
+if (!INSIGHTS_SERVICE_URL) {
+	console.warn("USER_INSIGHTS_SERVICE_URL not set");
+}
+
+if (!SENTIMENT_SERVICE_URL) {
+	console.warn("MARKET_SENTIMENT_SERVICE_URL not set");
+}
+
+if (!CHATBOT_SERVICE_URL) {
+	console.warn("CHATBOT_SERVICE_URL not set");
+}
 
 // Input schemas
 const chatSchema = z.object({
