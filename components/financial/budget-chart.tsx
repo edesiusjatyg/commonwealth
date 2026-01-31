@@ -7,22 +7,101 @@ import {
 } from "@/components/ui/chart";
 import { Wallet } from "lucide-react";
 import { Cell, Label, Pie, PieChart } from "recharts";
-import { budgetData, chartConfig } from "./constants";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import type { ExpenseBreakdownItem } from "@/hooks/use-expense-breakdown";
 
 interface BudgetChartProps {
-	totalBudget: number;
+	data: ExpenseBreakdownItem[];
+	totalExpense: number;
+	isLoading?: boolean;
+	isEmpty?: boolean;
 }
 
-export function BudgetChart({ totalBudget }: BudgetChartProps) {
+export function BudgetChart({
+	data,
+	totalExpense,
+	isLoading,
+	isEmpty,
+}: BudgetChartProps) {
+	// Loading state
+	if (isLoading) {
+		return (
+			<Card className="border-0 bg-transparent shadow-none">
+				<CardContent className="pt-6">
+					<div className="relative flex flex-col items-center">
+						<Skeleton className="h-[220px] w-[220px] rounded-full" />
+						<div className="mt-4 flex flex-wrap justify-center gap-3">
+							<Skeleton className="h-6 w-24" />
+							<Skeleton className="h-6 w-28" />
+							<Skeleton className="h-6 w-20" />
+						</div>
+					</div>
+				</CardContent>
+			</Card>
+		);
+	}
+
+	// Empty state
+	if (isEmpty || data.length === 0) {
+		return (
+			<Card className="border-0 bg-transparent shadow-none">
+				<CardContent className="pt-6">
+					<Alert>
+						<AlertCircle className="h-4 w-4" />
+						<AlertDescription>
+							No expenses found for this month. Start tracking your spending!
+						</AlertDescription>
+					</Alert>
+				</CardContent>
+			</Card>
+		);
+	}
+
+	// Prepare data for pie chart
+	const chartData = data.map((item) => ({
+		name: item.category,
+		value: item.percentage,
+		fill: item.color,
+		amount: item.amount,
+	}));
+
+	// Create chart config dynamically
+	const chartConfig = data.reduce(
+		(config, item) => {
+			config[item.category.toLowerCase()] = {
+				label: item.category,
+				color: item.color,
+			};
+			return config;
+		},
+		{} as Record<string, { label: string; color: string }>,
+	);
+
 	return (
 		<Card className="border-0 bg-transparent shadow-none">
 			<CardContent className="pt-6">
 				<div className="relative flex flex-col items-center">
 					<ChartContainer config={chartConfig} className="h-[220px] w-[220px]">
 						<PieChart>
-							<ChartTooltip content={<ChartTooltipContent hideLabel />} />
+							<ChartTooltip
+								content={<ChartTooltipContent hideLabel />}
+								formatter={(value, name, props) => {
+									const payload = props.payload as { amount?: number };
+									const amount = payload?.amount || 0;
+									return (
+										<div className="flex flex-col">
+											<span className="font-medium">{name}</span>
+											<span className="text-muted-foreground">
+												${amount.toFixed(2)} ({Number(value).toFixed(1)}%)
+											</span>
+										</div>
+									);
+								}}
+							/>
 							<Pie
-								data={budgetData}
+								data={chartData}
 								dataKey="value"
 								nameKey="name"
 								cx="50%"
@@ -32,7 +111,7 @@ export function BudgetChart({ totalBudget }: BudgetChartProps) {
 								strokeWidth={2}
 								stroke="hsl(var(--background))"
 							>
-								{budgetData.map((entry) => (
+								{chartData.map((entry) => (
 									<Cell key={entry.name} fill={entry.fill} />
 								))}
 
@@ -58,14 +137,14 @@ export function BudgetChart({ totalBudget }: BudgetChartProps) {
 														y={viewBox.cy}
 														className="fill-foreground font-bold text-xl"
 													>
-														${totalBudget.toLocaleString()}
+														${totalExpense.toFixed(2)}
 													</tspan>
 													<tspan
 														x={viewBox.cx}
 														y={(viewBox.cy || 0) + 18}
 														className="fill-muted-foreground text-xs"
 													>
-														Available Budget
+														Total Expenses
 													</tspan>
 												</text>
 											);
@@ -78,9 +157,9 @@ export function BudgetChart({ totalBudget }: BudgetChartProps) {
 					</ChartContainer>
 
 					<div className="mt-4 flex flex-wrap justify-center gap-3">
-						{budgetData.map((item) => (
+						{data.map((item) => (
 							<Badge
-								key={item.name}
+								key={item.category}
 								variant="outline"
 								className="flex items-center gap-1.5 px-2 py-1"
 							>
@@ -89,7 +168,7 @@ export function BudgetChart({ totalBudget }: BudgetChartProps) {
 									style={{ backgroundColor: item.color }}
 								/>
 								<span className="text-xs">
-									{item.name} - {item.value}%
+									{item.category} - {item.percentage.toFixed(1)}%
 								</span>
 							</Badge>
 						))}

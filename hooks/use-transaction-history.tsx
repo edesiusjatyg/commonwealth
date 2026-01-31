@@ -51,10 +51,22 @@ function groupTransactionsByDate(transactions: TransactionRecord[]) {
 		});
 }
 
-export function useTransactionHistory(walletId?: string) {
+export function useTransactionHistory(
+	walletId?: string,
+	externalYear?: number,
+	externalMonth?: number,
+) {
 	const currentDate = new Date();
-	const [year, setYear] = useState<number>(currentDate.getFullYear());
-	const [month, setMonth] = useState<number>(currentDate.getMonth() + 1); // 1-12
+	const [internalYear, setInternalYear] = useState<number>(
+		currentDate.getFullYear(),
+	);
+	const [internalMonth, setInternalMonth] = useState<number>(
+		currentDate.getMonth() + 1,
+	); // 1-12
+
+	// Use external state if provided, otherwise use internal state
+	const year = externalYear ?? internalYear;
+	const month = externalMonth ?? internalMonth;
 
 	// Derived values
 	const monthIndex = month - 1; // 0-11 for array indexing
@@ -67,7 +79,8 @@ export function useTransactionHistory(walletId?: string) {
 	// Fetch transaction history
 	const query = useQuery({
 		queryKey: ["transaction-history", walletId, year, month],
-		queryFn: () => getTransactionHistory({ walletId: walletId || "", start, end }),
+		queryFn: () =>
+			getTransactionHistory({ walletId: walletId || "", start, end }),
 		enabled: !!walletId,
 	});
 
@@ -75,7 +88,7 @@ export function useTransactionHistory(walletId?: string) {
 	const setMonthByName = (monthStr: string) => {
 		const index = MONTH_NAMES.indexOf(monthStr);
 		if (index !== -1) {
-			setMonth(index + 1);
+			setInternalMonth(index + 1);
 		}
 	};
 
@@ -94,8 +107,8 @@ export function useTransactionHistory(walletId?: string) {
 		year,
 		month,
 		monthName,
-		setYear,
-		setMonth,
+		setYear: setInternalYear,
+		setMonth: setInternalMonth,
 		setMonthByName,
 
 		// Date range

@@ -35,4 +35,18 @@ export const defaultCategoryConfig = {
 	color: "bg-gray-500",
 };
 
+// Color mapping for charts (Tailwind class to hex)
+export const categoryColorMap: Record<string, string> = {
+	Salary: "#22c55e", // green-500
+	Food: "#f97316", // orange-500
+	Transportation: "#f59e0b", // amber-500
+	Interest: "#a855f7", // purple-500
+	Entertainment: "#ec4899", // pink-500
+	Transfer: "#3b82f6", // blue-500
+	Shopping: "#ef4444", // red-500
+	Others: "#6b7280", // gray-500
+};
+
+export const defaultCategoryColor = "#6b7280"; // gray-500
+
 export const DEFAULT_TOTAL_BUDGET = 1800;
