@@ -248,7 +248,7 @@ export default function RegisterPage() {
 					</span>
 					<Link
 						href="/login"
-						className="font-semibold text-background hover:underline"
+						className="font-semibold text-muted-foreground hover:underline"
 					>
 						Sign in
 					</Link>
