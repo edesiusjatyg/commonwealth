@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useLoginForm } from "@/hooks/use-login-form";
 import { Button } from "@/components/ui/button";
@@ -14,12 +15,23 @@ import {
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 export default function LoginPage() {
    // TODO: integrate remember me into useLoginForm
 	const [showPassword, setShowPassword] = useState(false);
 	const [rememberMe, setRememberMe] = useState(false);
 	const { form, isPending, loginAction } = useLoginForm();
+	const searchParams = useSearchParams();
+
+	// Show warning toast if user is already authenticated
+	useEffect(() => {
+		if (searchParams.get("toast") === "already-authenticated") {
+			toast.warning("Already Logged In", {
+				description: "You are already authenticated. Redirected to home.",
+			});
+		}
+	}, [searchParams]);
 
 	return (
 		<main className="relative flex min-h-screen flex-col items-center bg-gradient-to-b from-white via-white to-pink-50/50 px-6 py-12 overflow-hidden">

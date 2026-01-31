@@ -4,11 +4,13 @@ import { TopMarketValueCard } from "@/components/top-market-value-card";
 import { WalletActions } from "@/components/wallet-actions/wallet-actions";
 import { WalletCard } from "@/components/wallet-card";
 import { WalletInsightCard } from "@/components/wallet-insight-card";
+import { AuthRedirectToast } from "@/components/auth-redirect-toast";
 import Image from "next/image";
 
 export default function Home() {
 	return (
 		<>
+			<AuthRedirectToast />
 			<TopBar />
 			<main className="container flex min-h-screen w-full flex-col items-center gap-8 bg-background">
 				<Image
