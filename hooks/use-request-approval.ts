@@ -22,7 +22,7 @@ export function useRequestApproval(walletId: string) {
 				});
 			} else {
 				toast.error("Request Failed", {
-					description: response.error || "Unable to send approval request",
+					description: response.message || "Unable to send approval request",
 				});
 			}
 		},

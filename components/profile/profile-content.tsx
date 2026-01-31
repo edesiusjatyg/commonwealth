@@ -69,9 +69,13 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 						<Wallet className="h-5 w-5 text-primary" />
 					</div>
 					<div className="flex flex-col">
-						<span className="text-sm text-muted-foreground">Wallet Address</span>
-						<span className="font-mono text-sm font-medium">
-							{profile.walletAddress.slice(0, 6)}...{profile.walletAddress.slice(-4)}
+						<span className="text-sm text-muted-foreground">
+							Wallet Address
+						</span>
+						<span className="font-mono text-sm font-medium overflow-elipsis max-w-xs">
+							{profile.walletAddress.slice(0, 6)}...
+							{profile.walletAddress.slice(-4)}
+							{/* {profile.walletAddress} */}
 						</span>
 					</div>
 				</CardContent>
@@ -128,7 +132,7 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 							</Label>
 							<div className="relative">
 								<span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-									Rp
+									$
 								</span>
 								<Input
 									id="dailyLimit"
@@ -150,9 +154,7 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 						{hasChanges && (
 							<Alert>
 								<AlertCircle className="h-4 w-4" />
-								<AlertDescription>
-									You have unsaved changes
-								</AlertDescription>
+								<AlertDescription>You have unsaved changes</AlertDescription>
 							</Alert>
 						)}
 
@@ -175,8 +177,8 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 				</Card>
 			</form>
 
-			{/* NEW: Emergency Contacts Manager */}
-			<EmergencyContactsManager walletId={walletId} />
+			{/* Emergency Contacts Manager */}
+			<EmergencyContactsManager />
 		</div>
 	);
 }

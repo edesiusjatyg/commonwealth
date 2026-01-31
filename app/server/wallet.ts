@@ -14,11 +14,6 @@ import { Address } from "viem";
 import crypto from "crypto";
 
 // Input schemas
-const emergencyContactSchema = z.object({
-	email: z.string().email("Invalid email address"),
-	name: z.string().optional(),
-});
-
 const createWalletSchema = z.object({
 	userId: z.string(),
 	name: z.string().min(1, "Wallet name is required"),
@@ -82,7 +77,7 @@ export async function createWallet(
 			};
 		}
 
-		const { userId, name, emergencyContacts, emergencyEmail, dailyLimit } =
+		const { userId, name, emergencyEmail, dailyLimit } =
 			validatedData.data;
 
 		const user = await prisma.user.findUnique({
@@ -99,22 +94,7 @@ export async function createWallet(
 		// Prepare Contract Args
 		const owners: Address[] = [user.eoaAddress as Address];
 		const requiredSignatures = BigInt(1); // 1/1 for this MVP
-		const dailyLimitBI = BigInt(Math.floor(dailyLimit * 1e18)); // Assume input is plain number, contract uses wei 18 decimals
-		// Note: user input dailyLimit is number, we convert to wei if needed.
-		// Schema has dailyLimit as number. Let's assume it's USD or Token units.
-		// If USDT (6 decimals) or ETH (18).
-		// Detailed requirements said "Deposit USDT". USDT is 6 decimals.
-		// "Daily Limit wallet". "Investasi BTC...".
-		// We'll assume standard 18 decimals for limit for simplicity or mapped to USDT.
-		// Let's use 18 decimals for now.
-		const emergencyContactAddr = user.eoaAddress as Address; // Self as emergency for MVP, or null? Struct requires address.
-		// Requirement: "User dapat memasukkan email emergency contact".
-		// This implies the contact is off-chain (email) for approval process?
-		// And the system (relayer) acts as the on-chain enforcer/signer when approval is granted?
-		// OR the emergency contact has an address?
-		// "Sistem dapat memberi notifikasi status approval".
-		// For MVP, we pass the user itself or the relayer as the "Emergency Contact" on chain,
-		// and the backend handles the email logic.
+		const dailyLimitBI = BigInt(Math.floor(dailyLimit * 1e18));
 
 		const salt = BigInt(Math.floor(Math.random() * 1000000));
 
@@ -122,7 +102,7 @@ export async function createWallet(
 			owners,
 			requiredSignatures,
 			dailyLimitBI,
-			[], // emergencyContacts handled in chain.ts via Relayer
+			[],
 			salt,
 		);
 
@@ -130,34 +110,19 @@ export async function createWallet(
 			owners,
 			requiredSignatures,
 			dailyLimitBI,
-			[], // emergencyContacts handled in chain.ts via Relayer
+			[],
 			salt,
 		);
 
-		// Create wallet with transaction
-		const wallet = await prisma.$transaction(async (tx) => {
-			const newWallet = await tx.wallet.create({
-				data: {
-					userId,
-					address: computedAddress,
-					name,
-					emergencyEmail: emergencyEmail || null, // Deprecated field
-					dailyLimit,
-				},
-			});
-
-			// Create emergency contact records
-			if (contactsToProcess.length > 0) {
-				await tx.emergencyContact.createMany({
-					data: contactsToProcess.map((contact) => ({
-						walletId: newWallet.id,
-						email: contact.email,
-						name: contact.name || null,
-					})),
-				});
-			}
-
-			return newWallet;
+		// Create wallet
+		const wallet = await prisma.wallet.create({
+			data: {
+				userId,
+				address: computedAddress,
+				name,
+				emergencyEmail: emergencyEmail || [],
+				dailyLimit,
+			},
 		});
 		await prisma.user.update({
 			where: { id: userId },
@@ -635,9 +600,6 @@ export async function getProfile(
 			where: { id: walletId },
 			include: {
 				user: true,
-				emergencyContacts: {
-					orderBy: { createdAt: "asc" },
-				},
 			},
 		});
 
@@ -656,12 +618,7 @@ export async function getProfile(
 			email: wallet.user.email || "",
 			nickname: wallet.name,
 			dailyLimit: Number(wallet.dailyLimit),
-			emergencyEmail: wallet.emergencyEmail, // DEPRECATED
-			emergencyContacts: wallet.emergencyContacts.map((c) => ({
-				id: c.id,
-				email: c.email,
-				name: c.name,
-			})),
+			emergencyEmail: wallet.emergencyEmail || [],
 			walletAddress: wallet.address,
 		};
 	} catch (error: any) {
@@ -872,242 +829,7 @@ export async function getCurrentWallet(): Promise<{
 }
 
 // ============================================
-// Emergency Contact Management
+// Emergency Contact Management (Simplified - Array-based)
 // ============================================
-
-const addEmergencyContactSchema = z.object({
-	walletId: z.string(),
-	email: z.string().email(),
-	name: z.string().optional(),
-});
-
-const removeEmergencyContactSchema = z.object({
-	walletId: z.string(),
-	contactId: z.string(),
-});
-
-export type AddEmergencyContactInput = z.infer<
-	typeof addEmergencyContactSchema
->;
-export type RemoveEmergencyContactInput = z.infer<
-	typeof removeEmergencyContactSchema
->;
-
-export type EmergencyContactResponse = {
-	success: boolean;
-	error?: string;
-	message?: string;
-};
-
-/**
- * Add an emergency contact to a wallet
- */
-export async function addEmergencyContact(
-	input: AddEmergencyContactInput,
-): Promise<EmergencyContactResponse> {
-	try {
-		const validatedData = addEmergencyContactSchema.safeParse(input);
-
-		if (!validatedData.success) {
-			return {
-				success: false,
-				error: validatedData.error.issues[0].message,
-				message: "Validation failed",
-			};
-		}
-
-		const { walletId, email, name } = validatedData.data;
-
-		// Check wallet exists
-		const wallet = await prisma.wallet.findUnique({
-			where: { id: walletId },
-			include: { emergencyContacts: true },
-		});
-
-		if (!wallet) {
-			return {
-				success: false,
-				error: "Wallet not found",
-			};
-		}
-
-		// Check max contacts limit (exactly 2 required)
-		if (wallet.emergencyContacts.length >= 2) {
-			return {
-				success: false,
-				error: "Maximum 2 emergency contacts allowed",
-			};
-		}
-
-		// Check for duplicate
-		const exists = wallet.emergencyContacts.some((c) => c.email === email);
-		if (exists) {
-			return {
-				success: false,
-				error: "This email is already an emergency contact",
-			};
-		}
-
-		await prisma.emergencyContact.create({
-			data: {
-				walletId,
-				email,
-				name: name || null,
-			},
-		});
-
-		return {
-			success: true,
-			message: "Emergency contact added successfully",
-		};
-	} catch (error: unknown) {
-		console.error("Add emergency contact error:", error);
-		return {
-			success: false,
-			error: "Internal server error",
-		};
-	}
-}
-
-/**
- * Remove an emergency contact from a wallet
- */
-export async function removeEmergencyContact(
-	input: RemoveEmergencyContactInput,
-): Promise<EmergencyContactResponse> {
-	try {
-		const validatedData = removeEmergencyContactSchema.safeParse(input);
-
-		if (!validatedData.success) {
-			return {
-				success: false,
-				error: validatedData.error.issues[0].message,
-				message: "Validation failed",
-			};
-		}
-
-		const { walletId, contactId } = validatedData.data;
-
-		// Check current contact count first
-		const wallet = await prisma.wallet.findUnique({
-			where: { id: walletId },
-			include: { emergencyContacts: true },
-		});
-
-		if (!wallet) {
-			return {
-				success: false,
-				error: "Wallet not found",
-			};
-		}
-
-		// Prevent removing if only 2 contacts remain (minimum required)
-		if (wallet.emergencyContacts.length <= 2) {
-			return {
-				success: false,
-				error: "Minimum 2 emergency contacts required. Cannot remove contact.",
-			};
-		}
-
-		// Verify contact belongs to wallet
-		const contact = await prisma.emergencyContact.findUnique({
-			where: { id: contactId },
-		});
-
-		if (!contact || contact.walletId !== walletId) {
-			return {
-				success: false,
-				error: "Contact not found",
-			};
-		}
-
-		await prisma.emergencyContact.delete({
-			where: { id: contactId },
-		});
-
-		return {
-			success: true,
-			message: "Emergency contact removed successfully",
-		};
-	} catch (error: unknown) {
-		console.error("Remove emergency contact error:", error);
-		return {
-			success: false,
-			error: "Internal server error",
-		};
-	}
-}
-
-/**
- * Get all emergency contacts for a wallet
- */
-export async function getEmergencyContacts(walletId: string) {
-	try {
-		const contacts = await prisma.emergencyContact.findMany({
-			where: { walletId },
-			orderBy: { createdAt: "asc" },
-		});
-
-		return contacts;
-	} catch (error) {
-		console.error("Get emergency contacts error:", error);
-		return [];
-	}
-}
-
-/**
- * Request approval from emergency contacts for daily limit override
- */
-export async function requestDailyLimitApproval(
-	walletId: string,
-): Promise<{ success: boolean; message?: string; error?: string }> {
-	try {
-		const wallet = await prisma.wallet.findUnique({
-			where: { id: walletId },
-			include: {
-				emergencyContacts: true,
-			},
-		});
-
-		if (!wallet) {
-			return {
-				success: false,
-				error: "Wallet not found",
-			};
-		}
-
-		if (wallet.emergencyContacts.length === 0) {
-			return {
-				success: false,
-				error: "No emergency contacts configured",
-			};
-		}
-
-		// Create notification for user
-		await prisma.notification.create({
-			data: {
-				userId: wallet.userId,
-				title: "Approval Request Sent",
-				message: `Approval request sent to ${wallet.emergencyContacts.length} emergency contact(s). They will be notified to approve your transaction.`,
-				type: "EMERGENCY_APPROVAL",
-			},
-		});
-
-		// In a real app, this would:
-		// 1. Send emails/SMS to emergency contacts
-		// 2. Create approval requests in database
-		// 3. Generate unique approval codes
-		// For now, we just create the notification
-
-		return {
-			success: true,
-			message: "Approval request sent to emergency contacts",
-		};
-	} catch (error: unknown) {
-		console.error("Request approval error:", error);
-		return {
-			success: false,
-			error: "Failed to send approval request",
-		};
-	}
-}
+// Emergency contacts are now stored as a simple string array in Wallet.emergencyEmail
+// Managed through updateProfile() function - no separate table needed

@@ -14,11 +14,7 @@ export type Profile = {
 	email: string;
 	nickname: string;
 	dailyLimit: number;
-	emergencyContacts: Array<{
-		id: string;
-		email: string;
-		name: string | null;
-	}>;
+	emergencyEmail: string[]; // Simple array of email strings
 	walletAddress: string;
 };
 
@@ -38,7 +34,7 @@ export function useProfile() {
 				throw new Error("No active wallet found");
 			}
 
-			// Fetch full profile data (includes emergency contacts)
+			// Fetch full profile data
 			const profileData = await rpc.fetchProfile(wallet.id);
 
 			if (profileData.error) {
@@ -50,7 +46,7 @@ export function useProfile() {
 				email: profileData.email,
 				nickname: profileData.nickname,
 				dailyLimit: profileData.dailyLimit,
-				emergencyContacts: profileData.emergencyContacts,
+				emergencyEmail: profileData.emergencyEmail || [],
 				walletAddress: profileData.walletAddress,
 			};
 		},
@@ -62,7 +58,7 @@ export function useProfile() {
 					email: user?.email || "",
 					nickname: wallet.name,
 					dailyLimit: wallet.dailyLimit,
-					emergencyContacts: [],
+					emergencyEmail: [],
 					walletAddress: wallet.address,
 				}
 			: undefined,

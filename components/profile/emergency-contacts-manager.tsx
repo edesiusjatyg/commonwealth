@@ -7,47 +7,73 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Mail, Plus, Trash2, AlertCircle } from "lucide-react";
-import { useEmergencyContacts, useAddEmergencyContact, useRemoveEmergencyContact } from "@/hooks/use-emergency-contacts";
+import { useProfile, useUpdateProfile } from "@/hooks/use-profile";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { toast } from "sonner";
 
-interface EmergencyContactsManagerProps {
-	walletId: string;
-}
-
-export function EmergencyContactsManager({ walletId }: EmergencyContactsManagerProps) {
+export function EmergencyContactsManager() {
 	const [newEmail, setNewEmail] = useState("");
-	const [newName, setNewName] = useState("");
+	const { data: profile, isLoading } = useProfile();
+	const updateProfile = useUpdateProfile();
 
-	const { data: contacts = [], isLoading } = useEmergencyContacts(walletId);
-	const addContact = useAddEmergencyContact(walletId);
-	const removeContact = useRemoveEmergencyContact(walletId);
-
-	const canRemove = contacts.length > 2; // Must maintain at least 2 contacts
+	const contacts = profile?.emergencyEmail || [];
+	const canRemove = contacts.length > 1; // Must maintain at least 1 contact
 	const canAdd = contacts.length < 2; // Maximum 2 contacts
 
 	const handleAdd = () => {
 		if (!newEmail) return;
+		
+		// Validate email format
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!emailRegex.test(newEmail)) {
+			toast.error("Invalid email address");
+			return;
+		}
 
-		addContact.mutate(
+		// Check for duplicates
+		if (contacts.includes(newEmail)) {
+			toast.error("This email is already an emergency contact");
+			return;
+		}
+
+		// Add new email to array
+		updateProfile.mutate(
 			{
-				email: newEmail,
-				name: newName || undefined,
+				emergencyEmail: [...contacts, newEmail],
 			},
 			{
 				onSuccess: () => {
 					setNewEmail("");
-					setNewName("");
+					toast.success("Emergency contact added");
+				},
+				onError: () => {
+					toast.error("Failed to add contact");
 				},
 			}
 		);
 	};
 
-	const handleRemove = (contactId: string) => {
+	const handleRemove = (email: string) => {
 		if (!canRemove) {
-			return; // Prevent removing if at minimum
+			toast.error("Minimum 1 emergency contact required");
+			return;
 		}
+		
 		if (confirm("Are you sure you want to remove this emergency contact?")) {
-			removeContact.mutate(contactId);
+			// Remove email from array
+			updateProfile.mutate(
+				{
+					emergencyEmail: contacts.filter((e) => e !== email),
+				},
+				{
+					onSuccess: () => {
+						toast.success("Emergency contact removed");
+					},
+					onError: () => {
+						toast.error("Failed to remove contact");
+					},
+				}
+			);
 		}
 	};
 
@@ -69,35 +95,32 @@ export function EmergencyContactsManager({ walletId }: EmergencyContactsManagerP
 						<Mail className="h-5 w-5" />
 						<CardTitle>Emergency Contacts</CardTitle>
 					</div>
-					<Badge variant={contacts.length === 2 ? "default" : "destructive"}>
-						{contacts.length}/2 Required
+					<Badge variant={contacts.length >= 1 && contacts.length <= 2 ? "default" : "destructive"}>
+						{contacts.length}/2
 					</Badge>
 				</div>
 				<CardDescription>
-					Emergency contacts approve expenses when you exceed your daily limit. Exactly 2 contacts are required.
+					Emergency contacts approve expenses when you exceed your daily limit. 1-2 contacts recommended.
 				</CardDescription>
 			</CardHeader>
 			<CardContent className="space-y-4">
 				{/* Existing Contacts */}
 				{contacts.length > 0 ? (
 					<div className="space-y-2">
-						{contacts.map((contact) => (
+						{contacts.map((email) => (
 							<div
-								key={contact.id}
+								key={email}
 								className="flex items-center justify-between rounded-lg border p-3"
 							>
 								<div className="flex-1">
-									<p className="font-medium">{contact.email}</p>
-									{contact.name && (
-										<p className="text-sm text-muted-foreground">{contact.name}</p>
-									)}
+									<p className="font-medium">{email}</p>
 								</div>
 								<Button
 									variant="ghost"
 									size="sm"
-									onClick={() => handleRemove(contact.id)}
-									disabled={removeContact.isPending || !canRemove}
-									title={!canRemove ? "Minimum 2 contacts required" : "Remove contact"}
+									onClick={() => handleRemove(email)}
+									disabled={updateProfile.isPending || !canRemove}
+									title={!canRemove ? "Minimum 1 contact required" : "Remove contact"}
 								>
 									<Trash2 className="h-4 w-4 text-destructive" />
 								</Button>
@@ -108,18 +131,17 @@ export function EmergencyContactsManager({ walletId }: EmergencyContactsManagerP
 					<Alert variant="destructive">
 						<AlertCircle className="h-4 w-4" />
 						<AlertDescription>
-							No emergency contacts found. You must have exactly 2 emergency contacts to use your wallet.
+							No emergency contacts found. Please add at least 1 emergency contact.
 						</AlertDescription>
 					</Alert>
 				)}
 
 				{/* Warning if not at required count */}
-				{contacts.length > 0 && contacts.length !== 2 && (
+				{contacts.length === 0 && (
 					<Alert variant="destructive">
 						<AlertCircle className="h-4 w-4" />
 						<AlertDescription>
-							You currently have {contacts.length} contact{contacts.length !== 1 ? 's' : ''}. 
-							{contacts.length < 2 ? ` Please add ${2 - contacts.length} more.` : ` Please remove ${contacts.length - 2}.`}
+							You currently have no emergency contacts. Please add at least 1.
 						</AlertDescription>
 					</Alert>
 				)}
@@ -135,24 +157,18 @@ export function EmergencyContactsManager({ walletId }: EmergencyContactsManagerP
 						<div className="space-y-2">
 							<Input
 								type="email"
-								placeholder="Emergency email"
+								placeholder="Emergency email address"
 								value={newEmail}
 								onChange={(e) => setNewEmail(e.target.value)}
-								disabled={addContact.isPending}
-							/>
-							<Input
-								type="text"
-								placeholder="Name (optional)"
-								value={newName}
-								onChange={(e) => setNewName(e.target.value)}
-								disabled={addContact.isPending}
+								disabled={updateProfile.isPending}
+								onKeyDown={(e) => e.key === "Enter" && handleAdd()}
 							/>
 							<Button
 								onClick={handleAdd}
-								disabled={!newEmail || addContact.isPending}
+								disabled={!newEmail || updateProfile.isPending}
 								className="w-full"
 							>
-								{addContact.isPending ? (
+								{updateProfile.isPending ? (
 									<>
 										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
 										Adding...
@@ -176,14 +192,6 @@ export function EmergencyContactsManager({ walletId }: EmergencyContactsManagerP
 					<p className="text-sm text-muted-foreground text-center">
 						Maximum of 2 emergency contacts reached.
 					</p>
-				)}
-
-				{contacts.length >= 5 && (
-					<Alert>
-						<AlertDescription>
-							Maximum of 5 emergency contacts reached. Remove a contact to add a new one.
-						</AlertDescription>
-					</Alert>
 				)}
 			</CardContent>
 		</Card>

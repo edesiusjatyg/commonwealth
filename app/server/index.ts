@@ -17,10 +17,7 @@ export {
 	getRewardsHistory,
 	initiateTransfer,
 	getCurrentWallet,
-	addEmergencyContact,
-	removeEmergencyContact,
-	getEmergencyContacts,
-	requestDailyLimitApproval,
+	requestDailyLimitUnlock,
 } from "./wallet";
 export type {
 	CreateWalletInput,
@@ -32,9 +29,6 @@ export type {
 	UpdateProfileInput,
 	ProfileResponse,
 	UpdateProfileResponse,
-	AddEmergencyContactInput,
-	RemoveEmergencyContactInput,
-	EmergencyContactResponse,
 } from "./wallet";
 
 // Expenses actions

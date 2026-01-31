@@ -20,10 +20,7 @@ import {
 	getCurrentWallet,
 	getCurrentUser,
 	createWallet,
-	addEmergencyContact as addEmergencyContactAction,
-	removeEmergencyContact as removeEmergencyContactAction,
-	getEmergencyContacts as getEmergencyContactsAction,
-	requestDailyLimitApproval as requestDailyLimitApprovalAction,
+	requestDailyLimitUnlock,
 } from "@/app/server";
 import type {
 	ProfileResponse as ServerProfileResponse,
@@ -362,10 +359,7 @@ export const fetchCurrentUser = async () => {
 	return await getCurrentUser();
 };
 
-export type EmergencyContact = {
-	email: string;
-	name?: string;
-};
+// Emergency contact management removed - now handled via updateProfile with emergencyEmail array
 
 export type SetupWalletInput = {
 	userId: string;
@@ -380,25 +374,6 @@ export const setupWallet = async (
 	return await createWallet(input);
 };
 
-export const addEmergencyContact = async (input: {
-	walletId: string;
-	email: string;
-	name?: string;
-}) => {
-	return await addEmergencyContactAction(input);
-};
-
-export const removeEmergencyContact = async (input: {
-	walletId: string;
-	contactId: string;
-}) => {
-	return await removeEmergencyContactAction(input);
-};
-
-export const getEmergencyContacts = async (walletId: string) => {
-	return await getEmergencyContactsAction(walletId);
-};
-
 export const requestDailyLimitApproval = async (walletId: string) => {
-	return await requestDailyLimitApprovalAction(walletId);
+	return await requestDailyLimitUnlock(walletId);
 };

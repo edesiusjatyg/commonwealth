@@ -62,11 +62,21 @@ export function useInitWallet(userId: string) {
 	};
 
 	const mutation = useMutation({
-		mutationFn: (values: InitWalletFormValues) =>
-			rpc.setupWallet({
-				userId,
+		mutationFn: (values: InitWalletFormValues) => {
+			const emails = values.emergencyContacts
+				.map((contact) => contact.email)
+				.filter(Boolean);
+			const _values = {
 				...values,
-			}),
+				emergencyEmail: emails,
+			};
+			console.debug("Setting up wallet with values:", values);
+			console.debug("Setting up wallet with _values:", _values);
+			return rpc.setupWallet({
+				userId,
+				..._values,
+			});
+		},
 		onSuccess: (data) => {
 			if (data.error) {
 				toast.error("Failed to setup wallet", {
