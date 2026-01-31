@@ -6,6 +6,7 @@ const SMTP_HOST = process.env.SMTP_HOST;
 const SMTP_PORT = Number(process.env.SMTP_PORT) || 587;
 const SMTP_USER = process.env.SMTP_USER;
 const SMTP_PASS = process.env.SMTP_PASS;
+const COMPANY_EMAIL = process.env.COMPANY_EMAIL;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
 const transporter = nodemailer.createTransport({
@@ -34,7 +35,7 @@ export async function sendApprovalEmail(
 
     try {
         await transporter.sendMail({
-            from: `"BlackWallet Security" <${SMTP_USER}>`,
+            from: `"CommonWealth Security" <${COMPANY_EMAIL}>`,
             to,
             subject: `Action Required: Approve Daily Limit Override for ${walletName}`,
             html: `
@@ -47,7 +48,7 @@ export async function sendApprovalEmail(
           </p>
           <p>If you did not expect this request, please ignore this email or contact the wallet owner immediately.</p>
           <hr />
-          <p style="font-size: 12px; color: #666;">BlackWallet Security Team</p>
+          <p style="font-size: 12px; color: #666;">CommonWealth Security Team</p>
         </div>
       `,
         });
