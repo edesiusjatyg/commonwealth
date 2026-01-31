@@ -24,7 +24,7 @@ export async function GET() {
          homeUrl: URL,
          iconUrl: URL + "/logo.png",
          splashImageUrl: URL + "/logo.png",
-         splashBackgroundColor: "#dededeff",
+         splashBackgroundColor: "#dedeff",
          webhookUrl: URL + "/api/webhook",
 
          subtitle: "Human-first crypto wallets",
@@ -42,7 +42,6 @@ export async function GET() {
             "wallet",
             "financial",
             "expensetracking",
-            "ai",
             "multisig",
          ],
 
