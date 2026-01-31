@@ -54,10 +54,6 @@ describe("Wallet Server Actions", () => {
 				name: "My Wallet",
 				emergencyEmail: ["test@example.com"],
 				dailyLimit: 100,
-				emergencyContacts: [
-					{ email: "emergency1@example.com", name: "Contact 1" },
-					{ email: "emergency2@example.com", name: "Contact 2" },
-				],
 			};
 
 			const result = await createWallet(input);

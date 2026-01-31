@@ -50,7 +50,13 @@ export type {
 } from "./notifications";
 
 // AI actions
-export { chat, generateInsight, getInsight, getSentiment, getOracleInsight } from "./ai";
+export {
+	chat,
+	generateInsight,
+	getInsight,
+	getSentiment,
+	getOracleInsight,
+} from "./ai";
 export type {
 	ChatInput,
 	GenerateInsightInput,
@@ -65,4 +71,8 @@ export { getOnboardingSteps } from "./onboarding";
 
 // Contacts actions
 export { getContacts, saveContactAction } from "./contacts";
-export type { SaveContactInput, ContactDTO, SaveContactResponse } from "./contacts";
+export type {
+	SaveContactInput,
+	ContactDTO,
+	SaveContactResponse,
+} from "./contacts";
