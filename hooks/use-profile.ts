@@ -24,10 +24,10 @@ export type Profile = {
  * Follows architecture: UI → Hook → RPC → Server Action
  */
 export function useProfile() {
-	const { data: wallet } = useCurrentWallet();
-	const { data: user } = useUser();
+	const { data: wallet, isLoading: isWalletLoading } = useCurrentWallet();
+	const { data: user, isLoading: isUserLoading } = useUser();
 
-	return useQuery({
+	const profileQuery = useQuery({
 		queryKey: queryKeys.profile.detail(wallet?.id),
 		queryFn: async (): Promise<Profile> => {
 			if (!wallet?.id) {
@@ -63,6 +63,12 @@ export function useProfile() {
 				}
 			: undefined,
 	});
+
+	// Combine loading states from all dependencies
+	return {
+		...profileQuery,
+		isLoading: isWalletLoading || isUserLoading || profileQuery.isLoading,
+	};
 }
 
 /**
