@@ -1,16 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, User, Lock, Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 export default function LoginWithBasePage() {
 	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
 	const [isPending, setIsPending] = useState(false);
+	const searchParams = useSearchParams();
+
+	// Show warning toast if user is already authenticated
+	useEffect(() => {
+		if (searchParams.get("toast") === "already-authenticated") {
+			toast.warning("Already Logged In", {
+				description: "You are already authenticated. Redirected to home.",
+			});
+		}
+	}, [searchParams]);
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
