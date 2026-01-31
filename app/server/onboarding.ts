@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
  * Get onboarding steps
  */
 export async function getOnboardingSteps(): Promise<OnboardingResponse> {
+	console.info("[onboarding.getOnboardingSteps] Fetching onboarding steps");
+	
 	const onboardingSteps: OnboardingStep[] = [
 		{
 			id: 1,
@@ -30,14 +32,25 @@ export async function getOnboardingSteps(): Promise<OnboardingResponse> {
 		},
 	];
 
+	console.info("[onboarding.getOnboardingSteps] Steps fetched", { 
+		count: onboardingSteps.length 
+	});
 	return { steps: onboardingSteps };
 }
 
 export async function completeOnboarding(userId: string): Promise<boolean> {
-	const result = await prisma.user.update({
-		where: { id: userId },
-		data: { onboarded: true },
-	});
-	return !!result;
+	console.info("[onboarding.completeOnboarding] Marking user as onboarded", { userId });
+	
+	try {
+		const result = await prisma.user.update({
+			where: { id: userId },
+			data: { onboarded: true },
+		});
+		console.info("[onboarding.completeOnboarding] Onboarding completed", { userId });
+		return !!result;
+	} catch (error) {
+		console.error("[onboarding.completeOnboarding] Error completing onboarding:", error);
+		return false;
+	}
 }
 

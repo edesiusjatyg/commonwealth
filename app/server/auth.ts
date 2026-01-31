@@ -34,10 +34,18 @@ export type RegisterInput = z.infer<typeof registerSchema>;
  * Login with email/password or Base Social ID
  */
 export async function login(input: LoginInput): Promise<AuthResponse> {
+	console.info("[auth.login] Login attempt started", { 
+		hasEmail: !!input.email, 
+		hasBaseSocialId: !!input.baseSocialId 
+	});
+	
 	try {
 		const validatedData = loginSchema.safeParse(input);
 
 		if (!validatedData.success) {
+			console.warn("[auth.login] Validation failed", { 
+				error: validatedData.error.issues[0].message 
+			});
 			return {
 				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
@@ -48,10 +56,12 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
 
 		let user = null;
 		if (baseSocialId) {
+			console.info("[auth.login] Attempting Base Social ID login", { baseSocialId });
 			user = await prisma.user.findUnique({
 				where: { baseSocialId },
 			});
 		} else if (email && password) {
+			console.info("[auth.login] Attempting email/password login", { email });
 			user = await prisma.user.findUnique({
 				where: { email },
 			});
@@ -59,14 +69,17 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
 			if (user && user.passwordHash) {
 				const passwordMatch = await bcrypt.compare(password, user.passwordHash);
 				if (!passwordMatch) {
+					console.warn("[auth.login] Password mismatch", { email });
 					user = null;
 				}
 			} else {
+				console.warn("[auth.login] User not found or no password hash", { email });
 				user = null;
 			}
 		}
 
 		if (!user) {
+			console.warn("[auth.login] Login failed - invalid credentials");
 			return {
 				error: "Invalid credentials",
 				message: "Login failed",
@@ -75,14 +88,15 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
 
 		// Set encrypted session cookie
 		await setSessionCookie(user.id);
+		console.info("[auth.login] Login successful", { userId: user.id });
 
 		return {
 			message: "Login successful",
 			userId: user.id,
 			onboarded: user.onboarded,
 		};
-	} catch (error: any) {
-		console.error("Login error:", error);
+	} catch (error: unknown) {
+		console.error("[auth.login] Login error:", error);
 		return {
 			error: "Internal server error",
 			message: "System error",
@@ -94,7 +108,9 @@ export async function login(input: LoginInput): Promise<AuthResponse> {
  * Logout current user
  */
 export async function logout(): Promise<AuthResponse> {
+	console.info("[auth.logout] Logout initiated");
 	await clearSessionCookie();
+	console.info("[auth.logout] Logout successful");
 	return { message: "Logout successful" };
 }
 
@@ -102,10 +118,18 @@ export async function logout(): Promise<AuthResponse> {
  * Register a new user with email/password
  */
 export async function register(input: RegisterInput): Promise<AuthResponse> {
+	console.info("[auth.register] Registration attempt started", { 
+		hasEmail: !!input.email,
+		hasBaseSocialId: !!input.baseSocialId 
+	});
+	
 	try {
 		const validatedData = registerSchema.safeParse(input);
 
 		if (!validatedData.success) {
+			console.warn("[auth.register] Validation failed", { 
+				error: validatedData.error.issues[0].message 
+			});
 			return {
 				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
@@ -114,11 +138,13 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 
 		const { email, password, baseSocialId } = validatedData.data;
 
+		console.info("[auth.register] Checking for existing user", { email });
 		const existingUser = await prisma.user.findUnique({
 			where: { email },
 		});
 
 		if (existingUser) {
+			console.warn("[auth.register] Email already registered", { email });
 			return {
 				error: "Email already registered",
 				message: "Registration failed",
@@ -126,11 +152,13 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 		}
 
 		if (baseSocialId) {
+			console.info("[auth.register] Checking for existing social account", { baseSocialId });
 			const existingSocialUser = await prisma.user.findUnique({
 				where: { baseSocialId },
 			});
 
 			if (existingSocialUser) {
+				console.warn("[auth.register] Social account already registered", { baseSocialId });
 				return {
 					error: "Social account already registered",
 					message: "Registration failed",
@@ -138,11 +166,14 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 			}
 		}
 
+		console.info("[auth.register] Hashing password");
 		const passwordHash = await bcrypt.hash(password, 10);
 
+		console.info("[auth.register] Generating EOA account");
 		const { privateKey, address: eoaAddress } = generateAccount();
 		const encryptedKey = encrypt(privateKey);
 
+		console.info("[auth.register] Creating user in database", { email, eoaAddress });
 		const user = await prisma.user.create({
 			data: {
 				email,
@@ -155,13 +186,14 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 
 		// Set encrypted session cookie
 		await setSessionCookie(user.id);
+		console.info("[auth.register] Registration successful", { userId: user.id });
 
 		return {
 			message: "User registered successfully",
 			userId: user.id,
 		};
-	} catch (error: any) {
-		console.error("Registration error:", error);
+	} catch (error: unknown) {
+		console.error("[auth.register] Registration error:", error);
 		return {
 			error: "Internal server error",
 			message: "System error",
@@ -175,11 +207,11 @@ export async function getCurrentUser(): Promise<{ id: string; email: string | nu
 	try {
 		const userId = await getCurrentUserId();
 		if (!userId) {
-			console.warn("[getCurrentUser] Current userId is missing:", userId);
+			console.debug("[auth.getCurrentUser] No userId in session");
 			return null;
 		}
 
-		console.log("[getCurrentUser] Found userId:", userId);
+		console.debug("[auth.getCurrentUser] Fetching user", { userId });
 
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
@@ -191,21 +223,14 @@ export async function getCurrentUser(): Promise<{ id: string; email: string | nu
 		});
 
 		if (user) {
-			console.log("[getCurrentUser] User found:", {
-				id: user.id,
-				email: user.email,
-				onboarded: user.onboarded,
-			});
+			console.debug("[auth.getCurrentUser] User found", { userId: user.id });
 		} else {
-			console.warn(
-				"[getCurrentUser] No user found in database for userId:",
-				userId,
-			);
+			console.warn("[auth.getCurrentUser] No user found in database", { userId });
 		}
 
 		return user;
 	} catch (error) {
-		console.error("[getCurrentUser] Error:", error);
+		console.error("[auth.getCurrentUser] Error:", error);
 		return null;
 	}
 }

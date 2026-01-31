@@ -72,6 +72,13 @@ export async function deployWalletOnChain(
     emergencyContacts: Address[],
     salt: bigint
 ): Promise<string> {
+    console.info("[chain.deployWalletOnChain] Deploying wallet on-chain", { 
+        ownersCount: owners.length,
+        requiredSignatures: requiredSignatures.toString(),
+        dailyLimit: dailyLimit.toString(),
+        salt: salt.toString()
+    });
+    
     try {
         const hash = await walletClient.writeContract({
             address: FACTORY_ADDRESS,
@@ -80,7 +87,7 @@ export async function deployWalletOnChain(
             args: [owners, requiredSignatures, dailyLimit, [RELAYER_ADDRESS], salt]
         });
 
-        console.log(`Transaction sent: ${hash}. Waiting for confirmation...`);
+        console.info("[chain.deployWalletOnChain] Transaction sent", { hash });
 
         const receipt = await publicClient.waitForTransactionReceipt({
             hash,
@@ -88,19 +95,27 @@ export async function deployWalletOnChain(
         });
 
         if (receipt.status !== 'success') {
+            console.error("[chain.deployWalletOnChain] Transaction failed", { 
+                hash, 
+                status: receipt.status 
+            });
             throw new Error(`Transaction failed with status: ${receipt.status}`);
         }
 
-        console.log(`Transaction confirmed: ${hash}`);
+        console.info("[chain.deployWalletOnChain] Transaction confirmed", { hash });
 
         return hash;
     } catch (e) {
-        console.error("Chain deployment failed", e);
+        console.error("[chain.deployWalletOnChain] Chain deployment failed:", e);
         throw e;
     }
 }
 
 export async function resetDailyLimitOnChain(walletAddress: string): Promise<string> {
+    console.info("[chain.resetDailyLimitOnChain] Resetting daily limit on-chain", { 
+        walletAddress 
+    });
+    
     try {
         const hash = await walletClient.writeContract({
             address: walletAddress as Address,
@@ -117,20 +132,24 @@ export async function resetDailyLimitOnChain(walletAddress: string): Promise<str
             args: []
         });
 
-        console.log(`Reset daily limit tx sent: ${hash}`);
+        console.info("[chain.resetDailyLimitOnChain] Reset daily limit tx sent", { hash });
 
         await publicClient.waitForTransactionReceipt({ hash });
+        
+        console.info("[chain.resetDailyLimitOnChain] Transaction confirmed", { hash });
 
         return hash;
     } catch (e) {
-        console.error("Failed to reset daily limit on chain", e);
+        console.error("[chain.resetDailyLimitOnChain] Failed to reset daily limit on chain:", e);
         throw e;
     }
 }
 
 export function generateAccount() {
+    console.info("[chain.generateAccount] Generating new account");
     const privateKey = generatePrivateKey();
     const account = privateKeyToAccount(privateKey);
+    console.info("[chain.generateAccount] Account generated", { address: account.address });
     return {
         privateKey,
         address: account.address
@@ -144,12 +163,19 @@ export async function computeWalletAddress(
     emergencyContacts: Address[],
     salt: bigint
 ): Promise<string> {
+    console.info("[chain.computeWalletAddress] Computing wallet address", { 
+        ownersCount: owners.length,
+        salt: salt.toString()
+    });
+    
     const address = await publicClient.readContract({
         address: FACTORY_ADDRESS,
         abi: FACTORY_ABI,
         functionName: 'computeAddress',
         args: [owners, requiredSignatures, dailyLimit, [RELAYER_ADDRESS], salt, account.address]
     });
+    
+    console.info("[chain.computeWalletAddress] Address computed", { address });
     return address;
 }
 

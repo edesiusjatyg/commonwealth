@@ -50,10 +50,18 @@ export type GetSentimentInput = z.infer<typeof getSentimentSchema>;
  * Chat with AI assistant - proxies to chatbot microservice
  */
 export async function chat(input: ChatInput): Promise<ChatResponse> {
+	console.info("[ai.chat] Chat request started", { 
+		messageLength: input.user_message?.length,
+		hasSessionId: !!input.session_id 
+	});
+	
 	try {
 		const validatedData = chatSchema.safeParse(input);
 
 		if (!validatedData.success) {
+			console.warn("[ai.chat] Validation failed", { 
+				error: validatedData.error.issues[0].message 
+			});
 			return {
 				error: validatedData.error.issues[0].message,
 				data: null,
@@ -64,6 +72,10 @@ export async function chat(input: ChatInput): Promise<ChatResponse> {
 
 		const { user_message, session_id } = validatedData.data;
 
+		console.info("[ai.chat] Sending request to chatbot service", { 
+			serviceUrl: CHATBOT_SERVICE_URL,
+			sessionId: session_id 
+		});
 		const response = await axios.post(
 			`${CHATBOT_SERVICE_URL}/chat`,
 			{
@@ -72,9 +84,13 @@ export async function chat(input: ChatInput): Promise<ChatResponse> {
 			},
 		);
 
+		console.info("[ai.chat] Chat response received", { 
+			hasData: !!response.data,
+			sessionId: response.data?.meta?.session_id 
+		});
 		return response.data;
-	} catch (error: any) {
-		console.error("Chat error:", error.message);
+	} catch (error: unknown) {
+		console.error("[ai.chat] Chat error:", error);
 		return { 
 			error: "Chat service unavailable", 
 			data: null,
@@ -90,10 +106,17 @@ export async function chat(input: ChatInput): Promise<ChatResponse> {
 export async function generateInsight(
 	input: GenerateInsightInput,
 ): Promise<InsightResponse> {
+	console.info("[ai.generateInsight] Insight generation started", { 
+		userId: input.userId 
+	});
+	
 	try {
 		const validatedData = generateInsightSchema.safeParse(input);
 
 		if (!validatedData.success) {
+			console.warn("[ai.generateInsight] Validation failed", { 
+				error: validatedData.error.issues[0].message 
+			});
 			return {
 				error: validatedData.error.issues[0].message,
 				insight_text: "",
@@ -103,6 +126,10 @@ export async function generateInsight(
 
 		const { userId, transactionsData } = validatedData.data;
 
+		console.info("[ai.generateInsight] Sending request to insights service", { 
+			serviceUrl: INSIGHTS_SERVICE_URL,
+			userId 
+		});
 		const response = await axios.post(
 			`${INSIGHTS_SERVICE_URL}/insights/generate`,
 			{
@@ -113,9 +140,10 @@ export async function generateInsight(
 			},
 		);
 
+		console.info("[ai.generateInsight] Insight generated successfully", { userId });
 		return response.data;
-	} catch (error: any) {
-		console.error("AI Insight generation error:", error.message);
+	} catch (error: unknown) {
+		console.error("[ai.generateInsight] Insight generation error:", error);
 		return {
 			error: "AI Insights Service unreachable",
 			insight_text: "",
@@ -130,6 +158,8 @@ export async function generateInsight(
 export async function getInsight(
 	input: GetInsightInput,
 ): Promise<InsightResponse> {
+	console.info("[ai.getInsight] Fetching insight", { userId: input.userId });
+	
 	try {
 		const validatedData = getInsightSchema.safeParse(input);
 

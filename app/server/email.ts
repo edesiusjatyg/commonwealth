@@ -27,8 +27,13 @@ export async function sendApprovalEmail(
     walletName: string,
     approvalLink: string
 ): Promise<boolean> {
+    console.info("[email.sendApprovalEmail] Sending approval email", { 
+        to, 
+        walletName 
+    });
+    
     if (!SMTP_HOST || !SMTP_USER) {
-        console.warn("SMTP not configured, skipping email send");
+        console.warn("[email.sendApprovalEmail] SMTP not configured, using mock mode");
         console.log(`[MOCK EMAIL] To: ${to}, Link: ${approvalLink}`);
         return true; // Return true to allow testing without SMTP
     }
@@ -52,9 +57,10 @@ export async function sendApprovalEmail(
         </div>
       `,
         });
+        console.info("[email.sendApprovalEmail] Email sent successfully", { to });
         return true;
     } catch (error) {
-        console.error("Failed to send approval email:", error);
+        console.error("[email.sendApprovalEmail] Failed to send approval email:", error);
         return false;
     }
 }

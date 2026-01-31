@@ -67,10 +67,18 @@ export type ProcessRewardInput = z.infer<typeof rewardSchema>;
 export async function createWallet(
 	input: CreateWalletInput,
 ): Promise<WalletResponse> {
+	console.info("[wallet.createWallet] Wallet creation started", { 
+		userId: input.userId,
+		walletName: input.name 
+	});
+	
 	try {
 		const validatedData = createWalletSchema.safeParse(input);
 
 		if (!validatedData.success) {
+			console.warn("[wallet.createWallet] Validation failed", { 
+				error: validatedData.error.issues[0].message 
+			});
 			return {
 				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
@@ -80,11 +88,13 @@ export async function createWallet(
 		const { userId, name, emergencyEmail, dailyLimit } =
 			validatedData.data;
 
+		console.info("[wallet.createWallet] Fetching user EOA", { userId });
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
 		});
 
 		if (!user || !user.eoaAddress) {
+			console.error("[wallet.createWallet] User EOA not found", { userId });
 			return {
 				error: "User EOA not found",
 				message: "Wallet creation failed",
@@ -98,6 +108,10 @@ export async function createWallet(
 
 		const salt = BigInt(Math.floor(Math.random() * 1000000));
 
+		console.info("[wallet.createWallet] Computing wallet address", { 
+			owners, 
+			dailyLimit: dailyLimitBI.toString() 
+		});
 		const computedAddress = await computeWalletAddress(
 			owners,
 			requiredSignatures,
@@ -106,6 +120,9 @@ export async function createWallet(
 			salt,
 		);
 
+		console.info("[wallet.createWallet] Deploying wallet on-chain", { 
+			address: computedAddress 
+		});
 		await deployWalletOnChain(
 			owners,
 			requiredSignatures,
@@ -115,6 +132,10 @@ export async function createWallet(
 		);
 
 		// Create wallet
+		console.info("[wallet.createWallet] Creating wallet in database", { 
+			address: computedAddress, 
+			name 
+		});
 		const wallet = await prisma.wallet.create({
 			data: {
 				userId,
@@ -124,11 +145,14 @@ export async function createWallet(
 				dailyLimit,
 			},
 		});
+		
+		console.info("[wallet.createWallet] Marking user as onboarded", { userId });
 		await prisma.user.update({
 			where: { id: userId },
 			data: { onboarded: true },
 		});
 
+		console.info("[wallet.createWallet] Creating notification", { userId });
 		await prisma.notification.create({
 			data: {
 				userId,
@@ -138,13 +162,17 @@ export async function createWallet(
 			},
 		});
 
+		console.info("[wallet.createWallet] Wallet created successfully", { 
+			walletId: wallet.id, 
+			address: wallet.address 
+		});
 		return {
 			message: "Wallet created successfully",
 			walletId: wallet.id,
 			address: wallet.address,
 		};
-	} catch (error: any) {
-		console.error("Wallet creation error:", error);
+	} catch (error: unknown) {
+		console.error("[wallet.createWallet] Wallet creation error:", error);
 		return {
 			error: "Internal server error",
 			message: "System error",
@@ -156,10 +184,18 @@ export async function createWallet(
  * Deposit funds to a wallet
  */
 export async function deposit(input: DepositInput): Promise<WalletResponse> {
+	console.info("[wallet.deposit] Deposit started", { 
+		walletId: input.walletId, 
+		amount: input.amount 
+	});
+	
 	try {
 		const validatedData = depositSchema.safeParse(input);
 
 		if (!validatedData.success) {
+			console.warn("[wallet.deposit] Validation failed", { 
+				error: validatedData.error.issues[0].message 
+			});
 			return {
 				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
@@ -168,18 +204,21 @@ export async function deposit(input: DepositInput): Promise<WalletResponse> {
 
 		const { walletId, amount, category } = validatedData.data;
 
+		console.info("[wallet.deposit] Fetching wallet", { walletId });
 		const wallet = await prisma.wallet.findUnique({
 			where: { id: walletId },
 			include: { user: true },
 		});
 
 		if (!wallet) {
+			console.error("[wallet.deposit] Wallet not found", { walletId });
 			return {
 				error: "Wallet not found",
 				message: "Deposit failed",
 			};
 		}
 
+		console.info("[wallet.deposit] Creating transaction", { walletId, amount, category });
 		await prisma.transaction.create({
 			data: {
 				walletId,
@@ -190,6 +229,7 @@ export async function deposit(input: DepositInput): Promise<WalletResponse> {
 			},
 		});
 
+		console.info("[wallet.deposit] Creating notification", { userId: wallet.userId });
 		await prisma.notification.create({
 			data: {
 				userId: wallet.userId,
@@ -199,12 +239,13 @@ export async function deposit(input: DepositInput): Promise<WalletResponse> {
 			},
 		});
 
+		console.info("[wallet.deposit] Deposit successful", { walletId, amount });
 		return {
 			message: "Deposit successful",
 			walletId: wallet.id,
 		};
-	} catch (error: any) {
-		console.error("Deposit error:", error);
+	} catch (error: unknown) {
+		console.error("[wallet.deposit] Deposit error:", error);
 		return {
 			error: "Internal server error",
 			message: "System error",
@@ -216,10 +257,18 @@ export async function deposit(input: DepositInput): Promise<WalletResponse> {
  * Withdraw funds from a wallet
  */
 export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
+	console.info("[wallet.withdraw] Withdrawal started", { 
+		walletId: input.walletId, 
+		amount: input.amount 
+	});
+	
 	try {
 		const validatedData = withdrawSchema.safeParse(input);
 
 		if (!validatedData.success) {
+			console.warn("[wallet.withdraw] Validation failed", { 
+				error: validatedData.error.issues[0].message 
+			});
 			return {
 				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
@@ -228,6 +277,7 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 
 		const { walletId, amount, category, description } = validatedData.data;
 
+		console.info("[wallet.withdraw] Fetching wallet", { walletId });
 		const wallet = await prisma.wallet.findUnique({
 			where: { id: walletId },
 			include: {
@@ -237,6 +287,7 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 		});
 
 		if (!wallet) {
+			console.error("[wallet.withdraw] Wallet not found", { walletId });
 			return {
 				error: "Wallet not found",
 				message: "Withdrawal failed",
@@ -255,7 +306,9 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 			.reduce((sum: number, t: TransactionType) => sum + Number(t.amount), 0);
 		const balance = totalDeposits - totalWithdrawals;
 
+		console.info("[wallet.withdraw] Balance check", { balance, requestedAmount: amount });
 		if (amount > balance) {
+			console.warn("[wallet.withdraw] Insufficient balance", { balance, requestedAmount: amount });
 			return {
 				error: "Insufficient balance",
 				message: "Withdrawal failed",
@@ -266,7 +319,16 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 		const alreadySpentToday = Number(wallet.spendingToday);
 		const newSpendingToday = alreadySpentToday + amount;
 
+		console.info("[wallet.withdraw] Daily limit check", { 
+			spendingLimit, 
+			alreadySpentToday, 
+			newSpendingToday 
+		});
 		if (spendingLimit > 0 && newSpendingToday > spendingLimit) {
+			console.warn("[wallet.withdraw] Daily limit exceeded", { 
+				spendingLimit, 
+				newSpendingToday 
+			});
 			return {
 				error: "Daily limit exceeded.",
 				message:
@@ -279,6 +341,9 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 			newSpendingToday >= spendingLimit * 0.8 &&
 			alreadySpentToday < spendingLimit * 0.8
 		) {
+			console.info("[wallet.withdraw] Sending 80% limit warning notification", { 
+				userId: wallet.userId 
+			});
 			await prisma.notification.create({
 				data: {
 					userId: wallet.userId,
@@ -289,6 +354,7 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 			});
 		}
 
+		console.info("[wallet.withdraw] Creating withdrawal transaction", { walletId, amount });
 		await prisma.transaction.create({
 			data: {
 				walletId,
@@ -299,11 +365,18 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 			},
 		});
 
+		console.info("[wallet.withdraw] Updating spending today", { 
+			walletId, 
+			newSpendingToday 
+		});
 		await prisma.wallet.update({
 			where: { id: walletId },
 			data: { spendingToday: newSpendingToday },
 		});
 
+		console.info("[wallet.withdraw] Creating success notification", { 
+			userId: wallet.userId 
+		});
 		await prisma.notification.create({
 			data: {
 				userId: wallet.userId,
@@ -313,12 +386,13 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 			},
 		});
 
+		console.info("[wallet.withdraw] Withdrawal successful", { walletId, amount });
 		return {
 			message: "Withdrawal successful",
 			walletId: wallet.id,
 		};
-	} catch (error: any) {
-		console.error("Withdrawal error:", error);
+	} catch (error: unknown) {
+		console.error("[wallet.withdraw] Withdrawal error:", error);
 		return {
 			error: "Internal server error",
 			message: "System error",
@@ -332,10 +406,17 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 export async function approveDailyLimit(
 	input: ApproveDailyLimitInput,
 ): Promise<WalletResponse> {
+	console.info("[wallet.approveDailyLimit] Approval attempt started", { 
+		walletId: input.walletId 
+	});
+	
 	try {
 		const validatedData = approvalSchema.safeParse(input);
 
 		if (!validatedData.success) {
+			console.warn("[wallet.approveDailyLimit] Validation failed", { 
+				error: validatedData.error.issues[0].message 
+			});
 			return {
 				error: validatedData.error.issues[0].message,
 				message: "Validation failed",
@@ -344,11 +425,13 @@ export async function approveDailyLimit(
 
 		const { walletId, approvalCode } = validatedData.data;
 
+		console.info("[wallet.approveDailyLimit] Fetching wallet", { walletId });
 		const wallet = await prisma.wallet.findUnique({
 			where: { id: walletId },
 		});
 
 		if (!wallet) {
+			console.error("[wallet.approveDailyLimit] Wallet not found", { walletId });
 			return {
 				error: "Wallet not found",
 				message: "Approval failed",
@@ -356,6 +439,7 @@ export async function approveDailyLimit(
 		}
 
 		if (!wallet.approvalTokenHash || !wallet.approvalExpiresAt) {
+			console.warn("[wallet.approveDailyLimit] No pending approval request", { walletId });
 			return {
 				error: "No pending approval request",
 				message: "Approval failed",
@@ -363,6 +447,10 @@ export async function approveDailyLimit(
 		}
 
 		if (wallet.approvalExpiresAt < new Date()) {
+			console.warn("[wallet.approveDailyLimit] Approval request expired", { 
+				walletId, 
+				expiresAt: wallet.approvalExpiresAt 
+			});
 			return {
 				error: "Approval request expired",
 				message: "Approval failed",
@@ -370,11 +458,13 @@ export async function approveDailyLimit(
 		}
 
 		// Verify token
+		console.info("[wallet.approveDailyLimit] Verifying approval code");
 		const tokenHash = crypto
 			.createHash("sha256")
 			.update(approvalCode)
 			.digest("hex");
 		if (tokenHash !== wallet.approvalTokenHash) {
+			console.warn("[wallet.approveDailyLimit] Invalid approval code", { walletId });
 			return {
 				error: "Invalid approval code",
 				message: "Approval failed",
@@ -382,9 +472,13 @@ export async function approveDailyLimit(
 		}
 
 		// Execute on-chain unlock via Relayer
+		console.info("[wallet.approveDailyLimit] Resetting daily limit on-chain", { 
+			address: wallet.address 
+		});
 		await resetDailyLimitOnChain(wallet.address);
 
 		// Reset local tracking and clear approval fields
+		console.info("[wallet.approveDailyLimit] Updating wallet state", { walletId });
 		await prisma.wallet.update({
 			where: { id: walletId },
 			data: {
@@ -394,6 +488,9 @@ export async function approveDailyLimit(
 			},
 		});
 
+		console.info("[wallet.approveDailyLimit] Creating success notification", { 
+			userId: wallet.userId 
+		});
 		await prisma.notification.create({
 			data: {
 				userId: wallet.userId,
@@ -404,12 +501,13 @@ export async function approveDailyLimit(
 			},
 		});
 
+		console.info("[wallet.approveDailyLimit] Approval successful", { walletId });
 		return {
 			message: "Daily limit override approved",
 			walletId: wallet.id,
 		};
-	} catch (error: any) {
-		console.error("Approval error:", error);
+	} catch (error: unknown) {
+		console.error("[wallet.approveDailyLimit] Approval error:", error);
 		return {
 			error: "Internal server error",
 			message: "System error",
@@ -423,18 +521,27 @@ export async function approveDailyLimit(
 export async function requestDailyLimitUnlock(
 	walletId: string,
 ): Promise<{ success: boolean; message: string }> {
+	console.info("[wallet.requestDailyLimitUnlock] Unlock request started", { walletId });
+	
 	try {
 		const wallet = await prisma.wallet.findUnique({
 			where: { id: walletId },
 		});
 
-		if (!wallet) return { success: false, message: "Wallet not found" };
+		if (!wallet) {
+			console.error("[wallet.requestDailyLimitUnlock] Wallet not found", { walletId });
+			return { success: false, message: "Wallet not found" };
+		}
 
 		if (!wallet.emergencyEmail || wallet.emergencyEmail.length === 0) {
+			console.warn("[wallet.requestDailyLimitUnlock] No emergency contacts configured", { 
+				walletId 
+			});
 			return { success: false, message: "No emergency contacts configured" };
 		}
 
 		// Generate secure token
+		console.info("[wallet.requestDailyLimitUnlock] Generating approval token");
 		const approvalToken = crypto.randomBytes(32).toString("hex");
 		const tokenHash = crypto
 			.createHash("sha256")
@@ -443,6 +550,9 @@ export async function requestDailyLimitUnlock(
 		const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
 		// Save hash to DB
+		console.info("[wallet.requestDailyLimitUnlock] Saving approval token to database", { 
+			walletId 
+		});
 		await prisma.wallet.update({
 			where: { id: walletId },
 			data: {
@@ -453,16 +563,20 @@ export async function requestDailyLimitUnlock(
 
 		const approvalLink = `${process.env.NEXT_PUBLIC_APP_URL}/api/approve?walletId=${walletId}&code=${approvalToken}`;
 
+		console.info("[wallet.requestDailyLimitUnlock] Sending approval emails", { 
+			recipientCount: wallet.emergencyEmail.length 
+		});
 		for (const email of wallet.emergencyEmail) {
 			await sendApprovalEmail(email, wallet.name, approvalLink);
 		}
 
+		console.info("[wallet.requestDailyLimitUnlock] Unlock request successful", { walletId });
 		return {
 			success: true,
 			message: "Approval request sent to emergency contacts",
 		};
 	} catch (error) {
-		console.error("Request unlock error:", error);
+		console.error("[wallet.requestDailyLimitUnlock] Request unlock error:", error);
 		return { success: false, message: "Failed to send request" };
 	}
 }
@@ -814,6 +928,10 @@ export async function getCurrentWallet(): Promise<{
 		});
 
 		if (!wallet) return null;
+
+      console.debug(
+							`Found wallet for user id ${userId}: ${wallet.address}`,
+						);
 
 		return {
 			id: wallet.id,

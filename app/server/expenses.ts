@@ -21,10 +21,18 @@ export type GetExpensesInput = z.infer<typeof getExpensesSchema>;
 export async function getExpenses(
 	input: GetExpensesInput,
 ): Promise<BalanceResponse> {
+	console.info("[expenses.getExpenses] Fetching expenses", { 
+		walletId: input.walletId,
+		hasDateFilter: !!(input.startDate || input.endDate)
+	});
+	
 	try {
 		const validatedData = getExpensesSchema.safeParse(input);
 
 		if (!validatedData.success) {
+			console.warn("[expenses.getExpenses] Validation failed", { 
+				error: validatedData.error.issues[0].message 
+			});
 			return {
 				error: validatedData.error.issues[0].message,
 				balance: 0,
@@ -45,15 +53,18 @@ export async function getExpenses(
 			historyWhereClause.createdAt = {};
 			if (startDate) historyWhereClause.createdAt.gte = new Date(startDate);
 			if (endDate) historyWhereClause.createdAt.lte = new Date(endDate);
+			console.info("[expenses.getExpenses] Applying date filter", { startDate, endDate });
 		}
 
 		// Fetch filtered history
+		console.info("[expenses.getExpenses] Fetching filtered transactions");
 		const transactions = await prisma.transaction.findMany({
 			where: historyWhereClause,
 			orderBy: { createdAt: "desc" },
 		});
 
 		// Fetch all transactions for totals and balance calculation
+		console.info("[expenses.getExpenses] Fetching all transactions for balance calculation");
 		const allTransactions = await prisma.transaction.findMany({
 			where: { walletId },
 		});
@@ -77,14 +88,23 @@ export async function getExpenses(
 			createdAt: t.createdAt,
 		}));
 
+		const balance = totalDeposits - totalWithdrawals;
+		console.info("[expenses.getExpenses] Expenses fetched successfully", { 
+			walletId,
+			balance,
+			transactionCount: history.length,
+			totalDeposits,
+			totalWithdrawals
+		});
+
 		return {
-			balance: totalDeposits - totalWithdrawals,
+			balance,
 			history,
 			totalDeposits,
 			totalWithdrawals,
 		};
-	} catch (error: any) {
-		console.error("Expenses error:", error);
+	} catch (error: unknown) {
+		console.error("[expenses.getExpenses] Expenses error:", error);
 		return {
 			error: "Internal server error",
 			balance: 0,
