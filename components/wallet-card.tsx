@@ -20,10 +20,13 @@ import { useWalletBalance } from "@/hooks/use-wallet-balance";
 import { cn, formatBalance } from "@/lib/utils";
 
 export function WalletCard({ className }: { className?: string }) {
-	const { data: wallet } = useCurrentWallet();
-	const { data, isLoading, isError, error } = useWalletBalance(
-		wallet?.id || "",
-	);
+	const { data: wallet, isLoading: isWalletLoading } = useCurrentWallet();
+	const {
+		data,
+		isLoading: isBalanceLoading,
+		isError,
+		error,
+	} = useWalletBalance(wallet?.id || "");
 	const dailySpending = useDailySpending(wallet ?? undefined);
 	const requestApproval = useRequestApproval(wallet?.id || "");
 
@@ -33,9 +36,10 @@ export function WalletCard({ className }: { className?: string }) {
 	const HiddenBalance = () => (
 		<span className="font-mono text-2xl tracking-wider">••••••••</span>
 	);
+	const isLoading = isWalletLoading || isBalanceLoading || dailySpending.isLoading;
 
-	// Loading state
-	if (isLoading) {
+	if (isLoading || !wallet || !data) {
+		// Loading state
 		return (
 			<div
 				className={cn(
@@ -52,6 +56,7 @@ export function WalletCard({ className }: { className?: string }) {
 
 	if (isError && error) {
 		console.error("wallet-card: ", error);
+		return;
 	}
 
 	// Error state - show fallback balance of 0
