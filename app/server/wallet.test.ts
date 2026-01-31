@@ -49,6 +49,10 @@ describe('Wallet Server Actions', () => {
                 userId: 'u1',
                 name: 'My Wallet',
                 dailyLimit: 100,
+                emergencyContacts: [
+                    { email: 'emergency1@example.com', name: 'Contact 1' },
+                    { email: 'emergency2@example.com', name: 'Contact 2' },
+                ],
             };
 
             const result = await createWallet(input);
@@ -71,7 +75,15 @@ describe('Wallet Server Actions', () => {
         it('should return error if user EOA not found', async () => {
             (prisma.user.findUnique as any).mockResolvedValue({ id: 'u1', eoaAddress: null });
 
-            const result = await createWallet({ userId: 'u1', name: 'My Wallet', dailyLimit: 0 });
+            const result = await createWallet({ 
+                userId: 'u1', 
+                name: 'My Wallet', 
+                dailyLimit: 0,
+                emergencyContacts: [
+                    { email: 'emergency1@example.com', name: 'Contact 1' },
+                    { email: 'emergency2@example.com', name: 'Contact 2' },
+                ],
+            });
 
             expect(result).toEqual({
                 error: 'User EOA not found',

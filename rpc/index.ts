@@ -20,6 +20,9 @@ import {
 	getCurrentWallet,
 	getCurrentUser,
 	createWallet,
+	addEmergencyContact as addEmergencyContactAction,
+	removeEmergencyContact as removeEmergencyContactAction,
+	getEmergencyContacts as getEmergencyContactsAction,
 } from "@/app/server";
 import type {
 	ProfileResponse as ServerProfileResponse,
@@ -358,13 +361,38 @@ export const fetchCurrentUser = async () => {
 	return await getCurrentUser();
 };
 
+export type EmergencyContact = {
+	email: string;
+	name?: string;
+};
+
 export type SetupWalletInput = {
 	userId: string;
 	name: string;
-	emergencyEmail?: string;
+	emergencyContacts: EmergencyContact[]; // REQUIRED: Exactly 2 contacts
+	emergencyEmail?: string; // DEPRECATED: Keep for backward compatibility
 	dailyLimit: number;
 };
 
 export const setupWallet = async (input: SetupWalletInput): Promise<WalletResponse> => {
 	return await createWallet(input);
+};
+
+export const addEmergencyContact = async (input: {
+	walletId: string;
+	email: string;
+	name?: string;
+}) => {
+	return await addEmergencyContactAction(input);
+};
+
+export const removeEmergencyContact = async (input: {
+	walletId: string;
+	contactId: string;
+}) => {
+	return await removeEmergencyContactAction(input);
+};
+
+export const getEmergencyContacts = async (walletId: string) => {
+	return await getEmergencyContactsAction(walletId);
 };

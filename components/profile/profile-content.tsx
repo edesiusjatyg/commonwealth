@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Mail, User, Shield, Wallet, AlertCircle } from "lucide-react";
 import { useUpdateProfile, type Profile } from "@/hooks/use-profile";
+import { EmergencyContactsManager } from "./emergency-contacts-manager";
 
 interface ProfileContentProps {
 	profile: Profile;
@@ -17,7 +18,6 @@ interface ProfileContentProps {
 export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 	const [nickname, setNickname] = useState(profile.nickname);
 	const [dailyLimit, setDailyLimit] = useState(profile.dailyLimit.toString());
-	const [emergencyEmail, setEmergencyEmail] = useState(profile.emergencyEmail || "");
 	const [hasChanges, setHasChanges] = useState(false);
 
 	const updateProfile = useUpdateProfile();
@@ -26,10 +26,9 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 	useEffect(() => {
 		const nicknameChanged = nickname !== profile.nickname;
 		const dailyLimitChanged = dailyLimit !== profile.dailyLimit.toString();
-		const emergencyChanged = emergencyEmail !== (profile.emergencyEmail || "");
 
-		setHasChanges(nicknameChanged || dailyLimitChanged || emergencyChanged);
-	}, [nickname, dailyLimit, emergencyEmail, profile]);
+		setHasChanges(nicknameChanged || dailyLimitChanged);
+	}, [nickname, dailyLimit, profile]);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
@@ -38,9 +37,6 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 			walletId,
 			nickname: nickname !== profile.nickname ? nickname : undefined,
 			dailyLimit: dailyLimit !== profile.dailyLimit.toString() ? Number(dailyLimit) : undefined,
-			emergencyEmail: emergencyEmail !== (profile.emergencyEmail || "") 
-				? (emergencyEmail || null) 
-				: undefined,
 		});
 	};
 
@@ -146,23 +142,7 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 							</p>
 						</div>
 
-						{/* Emergency Email */}
-						<div className="flex flex-col gap-2">
-							<Label htmlFor="emergencyEmail" className="flex items-center gap-2">
-								<AlertCircle className="h-4 w-4 text-muted-foreground" />
-								Emergency Contact Email
-							</Label>
-							<Input
-								id="emergencyEmail"
-								type="email"
-								value={emergencyEmail}
-								onChange={(e) => setEmergencyEmail(e.target.value)}
-								placeholder="emergency@example.com"
-							/>
-							<p className="text-xs text-muted-foreground">
-								This contact will be notified for spending above your daily limit
-							</p>
-						</div>
+						{/* REMOVED: Emergency Email field - now managed separately */}
 
 						{/* Info Alert */}
 						{hasChanges && (
@@ -192,6 +172,9 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 					</CardContent>
 				</Card>
 			</form>
+
+			{/* NEW: Emergency Contacts Manager */}
+			<EmergencyContactsManager walletId={walletId} />
 		</div>
 	);
 }

@@ -7,11 +7,15 @@ import * as rpc from "@/rpc";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { completeOnboarding } from "@/app/server/onboarding";
+
+const emergencyContactSchema = z.object({
+	email: z.string().email("Invalid email address"),
+	name: z.string().optional(),
+});
 
 const initWalletSchema = z.object({
 	name: z.string().min(1, "Wallet name is required"),
-	emergencyEmail: z.string().email("Invalid emegergency email address").optional().or(z.literal("")),
+	emergencyContacts: z.array(emergencyContactSchema).length(2, "Exactly 2 emergency contacts are required"),
 	dailyLimit: z.number().min(0, "Daily limit must be at least 0"),
 });
 
@@ -25,17 +29,43 @@ export function useInitWallet(userId: string) {
 		resolver: zodResolver(initWalletSchema),
 		defaultValues: {
 			name: "",
-			emergencyEmail: "",
+			emergencyContacts: [
+				{ email: "", name: "" },
+				{ email: "", name: "" },
+			],
 			dailyLimit: 1000,
 		},
 	});
+
+	const emergencyContacts = form.watch("emergencyContacts");
+
+	// Handler to update emergency contact email
+	const updateContactEmail = (index: number, email: string) => {
+		const current = form.getValues("emergencyContacts");
+		const updated = [...current];
+		updated[index] = {
+			email,
+			name: updated[index]?.name || "",
+		};
+		form.setValue("emergencyContacts", updated, { shouldValidate: true });
+	};
+
+	// Handler to update emergency contact name
+	const updateContactName = (index: number, name: string) => {
+		const current = form.getValues("emergencyContacts");
+		const updated = [...current];
+		updated[index] = {
+			email: updated[index]?.email || "",
+			name,
+		};
+		form.setValue("emergencyContacts", updated, { shouldValidate: true });
+	};
 
 	const mutation = useMutation({
 		mutationFn: (values: InitWalletFormValues) =>
 			rpc.setupWallet({
 				userId,
 				...values,
-				emergencyEmail: values.emergencyEmail || undefined,
 			}),
 		onSuccess: (data) => {
 			if (data.error) {
@@ -55,7 +85,7 @@ export function useInitWallet(userId: string) {
 
 			router.push("/");
 		},
-		onError: (error: any) => {
+		onError: (error: Error) => {
 			toast.error("Failed to setup wallet", {
 				description: error.message || "An unexpected error occurred",
 			});
@@ -71,5 +101,8 @@ export function useInitWallet(userId: string) {
 		onSubmit,
 		isPending: mutation.isPending,
 		error: mutation.error,
+		emergencyContacts,
+		updateContactEmail,
+		updateContactName,
 	};
 }

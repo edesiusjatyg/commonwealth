@@ -45,7 +45,11 @@ describe('Backend Integration Flow', () => {
         const result = await createWallet({
             userId,
             name: 'Integration Wallet',
-            dailyLimit: 500
+            dailyLimit: 500,
+            emergencyContacts: [
+                { email: 'emergency1@example.com', name: 'Contact 1' },
+                { email: 'emergency2@example.com', name: 'Contact 2' },
+            ],
         });
 
         expect(result.message).toBe('Wallet created successfully');
