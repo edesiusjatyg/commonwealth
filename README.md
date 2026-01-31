@@ -51,10 +51,17 @@ CommonWealth is a next-generation financial platform built to empower you with c
           <sub><b>Clydeew</b></sub>
         </a>
       </td>
+      <td align="center" width="150" style="border: none;">
+        <a href="https://github.com/Bagas-21">
+          <img src="https://github.com/Bagas-21.png" width="80px;" alt="Bagas-21"/>
+          <br />
+          <sub><b>Bagas-21</b></sub>
+        </a>
+      </td>
     </tr>
   </table>
 </div>
-
+<br>
 
 ## Key Benefits
 
