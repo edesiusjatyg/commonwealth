@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -18,6 +18,7 @@ export type LoginFormData = z.infer<typeof loginFormSchema>;
 
 export function useLoginForm() {
 	const router = useRouter();
+	const searchParams = useSearchParams();
 	const [isPending, startTransition] = useTransition();
 
 	const form = useForm<LoginFormData>({
@@ -43,11 +44,20 @@ export function useLoginForm() {
 				}
 
 				toast.success("Login successful");
-				// Redirect based on onboarding status
-				if (response.onboarded) {
-					router.push("/home");
+				
+				// Check for redirect parameter from middleware
+				const redirectTo = searchParams.get("redirect");
+
+				if (redirectTo) {
+					// Redirect to the original protected route they tried to access
+					router.push(redirectTo);
 				} else {
-					router.push("/onboarding");
+					// Default redirect based on onboarding status
+					if (response.onboarded) {
+						router.push("/home");
+					} else {
+						router.push("/onboarding");
+					}
 				}
 			})();
 		});
