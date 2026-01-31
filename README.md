@@ -1,29 +1,163 @@
-Most crypto wallets today are built either for speculation or for experienced users. They assume users can manage irreversible transactions, volatile assets, and complex security decisions entirely on their own. One wrong transfer, one moment of emotional trading, or one compromised device can permanently damage a user’s finances.
-![image](https://assets.devfolio.co/content/c08752308744425ea754a836701ddd7f/0b6fdd1e-ae84-446f-97a5-3d1d8849db92.png)
-At the same time, traditional financial apps provide guardrails like spending limits, approvals, transaction history, and alerts. But these protections disappear once users move on-chain. This creates a dangerous gap: users gain financial freedom, but lose financial safety and awareness.
+# BlackWallet
 
-Our project is built around a simple principle: 
-**human first, machine follows.** 
-Instead of letting automation take full control, we give users better tools to stay in control combining smart contract wallets, social approvals, financial tracking, and AI assistance to support responsible financial behavior on-chain.
+![Project Status](https://img.shields.io/badge/status-active_development-blue?style=for-the-badge)
+![License](https://img.shields.io/badge/license-Private-red?style=for-the-badge)
+![Next.js](https://img.shields.io/badge/Next.js-16.1-black?style=for-the-badge&logo=next.js)
+![Base](https://img.shields.io/badge/Base-Layer%202-blue?style=for-the-badge)
+![AI Powered](https://img.shields.io/badge/AI-Gemini%20Powered-orange?style=for-the-badge)
 
-### Crypto Spending Without Safety Controls
-On-chain wallets allow unlimited spending by default, and transactions cannot be reversed. If a wallet is compromised or a user overspends, there is no built-in protection mechanism. This makes everyday use of crypto risky, especially for users who want to treat their wallet as real money, not just investment capital.
-![image](https://assets.devfolio.co/content/c08752308744425ea754a836701ddd7f/69eee9ee-290d-4d47-997d-a77dc1638124.png)
-We introduce wallet-level safety controls using smart contracts: daily spending limits, automatic wallet locking when limits are reached, and emergency approval through a trusted contact using a multi-signature mechanism. When users genuinely need to exceed their limits, they must request approval instead of bypassing security.
+BlackWallet is a next-generation decentralized trading platform built on the **Base Layer 2** blockchain. It combines professional-grade crypto trading tools with advanced **AI-driven market sentiment analysis** to empower traders with real-time insights.
 
-This keeps users in control while adding human-based safety checks. Instead of replacing responsibility with automation, we design the wallet to encourage intentional spending and social verification when risk is high.
+Designed for performance and scalability, BlackWallet leverages a microservices architecture to deliver a seamless user experience, integrating direct smart contract interactions with powerful off-chain analytics.
 
-### No Financial Awareness Inside Wallets
-Most wallets only show balances and transaction hashes. Users cannot easily understand where their money goes, how much they spend in different categories, or whether their habits are improving or getting worse over time.
+---
 
-Our wallet automatically records every balance change into an expense tracker and requires users to categorize transactions. This turns raw blockchain data into structured financial behavior that users can actually reflect on.
+## Key Features
 
-By bringing expense tracking and history directly into the wallet, users can treat their crypto finances like real personal finance, not just isolated transfers between addresses.
+### Core Trading Engine
+- **Base Layer 2 Integration**: Lightning-fast, low-cost execution on the Base network.
+- **Smart Order Routing**: Optimized trade execution using **0x API** and **Uniswap V3** protocols.
+- **Interactive Charting**: Professional-grade charts powered by TradingView's Lightweight Charts and Recharts.
+- **Multi-Wallet Support**: Seamless connection with Coinbase Wallet, MetaMask, and other Web3 wallets via Wagmi/Viem.
 
-### Investment Decisions Need Support, Not Full Automation
-Many platforms attempt to solve retail trading losses by introducing fully autonomous AI trading bots. While these systems can work in controlled conditions, real markets are highly stochastic, regime-shifting, and driven by human behavior, news, and sudden liquidity changes. Building AI systems that can reliably adapt to this in real time is still extremely expensive and largely inaccessible to average users and even most companies.
-![image](https://assets.devfolio.co/content/c08752308744425ea754a836701ddd7f/1816091c-1b39-47db-b516-eaca0ac39a59.png)
-Instead of pretending that AI can safely replace human judgment, we keep humans in the decision loop. Our AI provides market sentiment that can be cited to an actual article and visual explanations through charts and conversational interaction, but all trades are still explicitly confirmed by the user.
-![image](https://assets.devfolio.co/content/c08752308744425ea754a836701ddd7f/642d6797-22ec-4e44-ab1b-ce230ea68531.png)
-This design treats AI as a decision-support tool, not a financial authority. The goal is to help users understand risk before acting, not to outsource responsibility to a model that users cannot audit or control.
+### AI Intelligence Layer
+- **Market Sentiment Analysis**: Real-time evaluation of market trends using Gemini AI.
+- **Personalized User Insights**: Behavioral analytics to tailor the trading experience.
+- **Smart Chat Assistant**: Integrated AI chatbot for instant support and market queries.
 
+### Robust Architecture
+- **Microservices Design**: Decoupled AI services running in isolated Docker containers for maximum reliability.
+- **Secure Authentication**: Custom authentication flows with JWT support.
+- **Type-Safe Development**: Full TypeScript integration across the full stack.
+
+---
+
+## Technology Stack
+
+### Frontend & Interface
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **UI Library**: [React 19](https://react.dev/)
+- **Styling**: [Tailwind CSS 4](https://tailwindcss.com/)
+- **Components**: [Radix UI](https://www.radix-ui.com/) (Shadcn)
+- **State Management**: [React Query](https://tanstack.com/query)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+
+### Blockchain & Web3
+- **Network**: Base Mainnet & Sepolia
+- **Interaction**: [Viem](https://viem.sh/) & [Wagmi](https://wagmi.sh/)
+- **Smart Contracts**: [Foundry](https://getfoundry.sh/) (Solidity)
+
+### Backend & AI Services
+- **Database**: PostgreSQL (managed via [Prisma](https://www.prisma.io/))
+- **AI Engine**: Google Gemini API
+- **Containerization**: Docker & Docker Compose
+- **Service Orchestration**: Microservices running in `layers/ai`
+
+---
+
+## Project Structure
+
+The repository flows a monorepo-style structure:
+
+```
+blackwallet/
+├── app/                  # Next.js App Router Application
+├── components/           # Reusable UI Components
+├── layers/               # Microservices & Smart Contracts
+│   ├── ai/               # AI Services (Sentiment, Chatbot, Insights)
+│   └── contracts/        # Foundry Smart Contract Project
+├── lib/                  # Shared Utilities & Helpers
+├── prisma/               # Database Schema & Migrations
+├── public/               # Static Assets
+└── types/                # Global Type Definitions
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+Ensure you have the following installed on your machine:
+- **Node.js**: v20+
+- **Docker**: For running AI services and databases.
+- **Foundry**: For smart contract development (optional).
+- **Git**
+
+### Installation
+
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/your-org/blackwallet.git
+    cd blackwallet
+    ```
+
+2.  **Install Frontend Dependencies**
+    ```bash
+    npm install
+    ```
+
+3.  **Environment Configuration**
+    Create a `.env.local` file in the root directory and configure your keys:
+    ```env
+    DATABASE_URL="postgresql://..."
+    NEXT_PUBLIC_WALLET_CONNECT_ID="..."
+    GEMINI_API_KEY="..."
+    # Add other service keys as needed
+    ```
+
+4.  **Initialize Database**
+    ```bash
+    npx prisma generate
+    npx prisma db push
+    ```
+
+### Running the Application
+
+**Development Server:**
+```bash
+npm run dev
+```
+The application will be available at `http://localhost:3000`.
+
+### Running AI Services
+To start the backend AI services (Sentiment Analysis, Chatbot, etc.):
+
+```bash
+cd layers/ai/market-sentiment-service
+docker-compose up -d
+```
+Repeat for other services in `market-sentiment-service` or `chatbot-service` as required.
+
+---
+
+## Testing
+
+We use **Vitest** for unit and integration testing.
+
+```bash
+# Run all tests
+npm test
+
+# Run integration tests
+npm run test:integration
+```
+
+---
+
+## Contributing
+
+We welcome contributions! Please follow these steps:
+1.  Fork the repository.
+2.  Create a feature branch (`git checkout -b feature/amazing-feature`).
+3.  Commit your changes (`git commit -m 'Add some amazing feature'`).
+4.  Push to the branch (`git push origin feature/amazing-feature`).
+5.  Open a Pull Request.
+
+---
+
+## License
+
+**Proprietary & Confidential**.
+Unauthorized copying or distribution of this file, via any medium, is strictly prohibited.
+All Rights Reserved.
