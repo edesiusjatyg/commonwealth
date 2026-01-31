@@ -23,6 +23,7 @@ import {
 	addEmergencyContact as addEmergencyContactAction,
 	removeEmergencyContact as removeEmergencyContactAction,
 	getEmergencyContacts as getEmergencyContactsAction,
+	requestDailyLimitApproval as requestDailyLimitApprovalAction,
 } from "@/app/server";
 import type {
 	ProfileResponse as ServerProfileResponse,
@@ -395,4 +396,8 @@ export const removeEmergencyContact = async (input: {
 
 export const getEmergencyContacts = async (walletId: string) => {
 	return await getEmergencyContactsAction(walletId);
+};
+
+export const requestDailyLimitApproval = async (walletId: string) => {
+	return await requestDailyLimitApprovalAction(walletId);
 };

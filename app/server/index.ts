@@ -20,6 +20,7 @@ export {
 	addEmergencyContact,
 	removeEmergencyContact,
 	getEmergencyContacts,
+	requestDailyLimitApproval,
 } from "./wallet";
 export type {
 	CreateWalletInput,

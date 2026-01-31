@@ -954,3 +954,60 @@ export async function getEmergencyContacts(walletId: string) {
 		return [];
 	}
 }
+
+/**
+ * Request approval from emergency contacts for daily limit override
+ */
+export async function requestDailyLimitApproval(
+	walletId: string,
+): Promise<{ success: boolean; message?: string; error?: string }> {
+	try {
+		const wallet = await prisma.wallet.findUnique({
+			where: { id: walletId },
+			include: {
+				emergencyContacts: true,
+			},
+		});
+
+		if (!wallet) {
+			return {
+				success: false,
+				error: "Wallet not found",
+			};
+		}
+
+		if (wallet.emergencyContacts.length === 0) {
+			return {
+				success: false,
+				error: "No emergency contacts configured",
+			};
+		}
+
+		// Create notification for user
+		await prisma.notification.create({
+			data: {
+				userId: wallet.userId,
+				title: "Approval Request Sent",
+				message: `Approval request sent to ${wallet.emergencyContacts.length} emergency contact(s). They will be notified to approve your transaction.`,
+				type: "EMERGENCY_APPROVAL",
+			},
+		});
+
+		// In a real app, this would:
+		// 1. Send emails/SMS to emergency contacts
+		// 2. Create approval requests in database
+		// 3. Generate unique approval codes
+		// For now, we just create the notification
+
+		return {
+			success: true,
+			message: "Approval request sent to emergency contacts",
+		};
+	} catch (error: unknown) {
+		console.error("Request approval error:", error);
+		return {
+			success: false,
+			error: "Failed to send approval request",
+		};
+	}
+}

@@ -11,6 +11,7 @@ export function RecentTransferredAccounts() {
 	const q = useTransferredAccounts();
 	if (q.isLoading) return <RecentTransferredAccountsLoading />;
 	if (q.isError || !q.data) return <RecentTransferredAccountsLoading />;
+   if (q.data.length === 0) return null;
 
 	return <RecentTransferredAccounts.Complete accounts={q.data} />;
 }
@@ -28,6 +29,7 @@ RecentTransferredAccounts.Complete = ({
 		});
 		router.push(`/actions/transfer?${params.toString()}`);
 	};
+
 
 	return (
 		<div className="flex gap-2">
