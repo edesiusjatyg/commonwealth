@@ -17,8 +17,44 @@
 **Access the platform now at [https://commonwealth-beta.vercel.app](https://commonwealth-beta.vercel.app)**
 
 CommonWealth is a next-generation financial platform built to empower you with clarity and control. By combining professional-grade tools with advanced AI insights, we help you navigate the digital asset landscape with confidence.
+<br><br>
+## Development Team
 
----
+<div align="center">
+  <table border="0" style="border-collapse: collapse;">
+    <tr>
+      <td align="center" width="150" style="border: none;">
+        <a href="https://github.com/edesiusjatyg">
+          <img src="https://github.com/edesiusjatyg.png" width="80px;" alt="edesiusjatyg"/>
+          <br />
+          <sub><b>edesiusjatyg</b></sub>
+        </a>
+      </td>
+      <td align="center" width="150" style="border: none;">
+        <a href="https://github.com/JavaneseIvankov">
+          <img src="https://github.com/JavaneseIvankov.png" width="80px;" alt="JavaneseIvankov"/>
+          <br />
+          <sub><b>JavaneseIvankov</b></sub>
+        </a>
+      </td>
+      <td align="center" width="150" style="border: none;">
+        <a href="https://github.com/ElFariss">
+          <img src="https://github.com/ElFariss.png" width="80px;" alt="ElFariss"/>
+          <br />
+          <sub><b>ElFariss</b></sub>
+        </a>
+      </td>
+      <td align="center" width="150" style="border: none;">
+        <a href="https://github.com/Clydeew">
+          <img src="https://github.com/Clydeew.png" width="80px;" alt="Clydeew"/>
+          <br />
+          <sub><b>Clydeew</b></sub>
+        </a>
+      </td>
+    </tr>
+  </table>
+</div>
+
 
 ## Key Benefits
 
