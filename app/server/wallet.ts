@@ -88,6 +88,29 @@ export async function createWallet(
 		const { userId, name, emergencyEmail, dailyLimit } =
 			validatedData.data;
 
+		// Check if wallet already exists for this user (idempotency)
+		console.info("[wallet.createWallet] Checking for existing wallet", {
+			userId,
+		});
+		const existingWallet = await prisma.wallet.findFirst({
+			where: { userId },
+		});
+
+		if (existingWallet) {
+			console.info(
+				"[wallet.createWallet] Wallet already exists, returning existing wallet",
+				{
+					walletId: existingWallet.id,
+					address: existingWallet.address,
+				},
+			);
+			return {
+				message: "Wallet already exists",
+				walletId: existingWallet.id,
+				address: existingWallet.address,
+			};
+		}
+
 		console.info("[wallet.createWallet] Fetching user EOA", { userId });
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
