@@ -28,8 +28,10 @@ model Wallet {
   name           String
   userId         String
   dailyLimit     Decimal        @default(0)
-  emergencyEmail String?
+  emergencyEmail String[]
   spendingToday  Decimal        @default(0)
+  approvalTokenHash String?
+  approvalExpiresAt DateTime?
   createdAt      DateTime       @default(now())
   transactions   Transaction[]
   user           User           @relation(fields: [userId], references: [id])

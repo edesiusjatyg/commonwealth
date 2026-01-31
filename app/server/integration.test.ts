@@ -45,6 +45,7 @@ describe('Backend Integration Flow', () => {
         const result = await createWallet({
             userId,
             name: 'Integration Wallet',
+            emergencyEmail: 'int_emergency@example.com',
             dailyLimit: 500
         });
 

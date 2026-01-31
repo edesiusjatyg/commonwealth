@@ -5,28 +5,28 @@ import { computeWalletAddress, deployWalletOnChain } from "./chain";
 
 // Mock dependencies
 vi.mock("@/lib/prisma", () => ({
-	prisma: {
-		user: {
-			findUnique: vi.fn(),
-			update: vi.fn(),
-		},
-		wallet: {
-			create: vi.fn(),
-			findUnique: vi.fn(),
-			update: vi.fn(),
-		},
-		notification: {
-			create: vi.fn(),
-		},
-		transaction: {
-			create: vi.fn(),
-		},
-	},
+    prisma: {
+        user: {
+            findUnique: vi.fn(),
+            update: vi.fn(),
+        },
+        wallet: {
+            create: vi.fn(),
+            findUnique: vi.fn(),
+            update: vi.fn(),
+        },
+        notification: {
+            create: vi.fn(),
+        },
+        transaction: {
+            create: vi.fn(),
+        },
+    },
 }));
 
 vi.mock("./chain", () => ({
-	computeWalletAddress: vi.fn(),
-	deployWalletOnChain: vi.fn(),
+    computeWalletAddress: vi.fn(),
+    deployWalletOnChain: vi.fn(),
 }));
 
 describe('Wallet Server Actions', () => {
@@ -48,6 +48,7 @@ describe('Wallet Server Actions', () => {
             const input = {
                 userId: 'u1',
                 name: 'My Wallet',
+                emergencyEmail: ['test@example.com'],
                 dailyLimit: 100,
             };
 
@@ -71,7 +72,9 @@ describe('Wallet Server Actions', () => {
         it('should return error if user EOA not found', async () => {
             (prisma.user.findUnique as any).mockResolvedValue({ id: 'u1', eoaAddress: null });
 
-            const result = await createWallet({ userId: 'u1', name: 'My Wallet', dailyLimit: 0 });
+            const result = await createWallet({
+                userId: 'u1', name: 'My Wallet', emergencyEmail: ['test@example.com'], dailyLimit: 0
+            });
 
             expect(result).toEqual({
                 error: 'User EOA not found',

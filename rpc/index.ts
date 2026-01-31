@@ -361,7 +361,7 @@ export const fetchCurrentUser = async () => {
 export type SetupWalletInput = {
 	userId: string;
 	name: string;
-	emergencyEmail?: string;
+	emergencyEmail?: string | string[];
 	dailyLimit: number;
 };
 
