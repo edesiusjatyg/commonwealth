@@ -118,3 +118,19 @@ export interface NotificationsResponse {
 	notifications: NotificationRecord[];
 	error?: string;
 }
+
+// Emergency Contact Types
+export type EmergencyContact = {
+	id: string;
+	email: string;
+	name: string | null;
+};
+
+export type Profile = {
+	email: string;
+	nickname: string;
+	dailyLimit: number;
+	emergencyEmail: string | null; // DEPRECATED
+	emergencyContacts: EmergencyContact[];
+	walletAddress: string;
+};

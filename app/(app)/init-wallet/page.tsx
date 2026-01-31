@@ -3,6 +3,7 @@
 import { useUser } from "@/hooks/use-user";
 import { useInitWallet } from "@/hooks/use-init-wallet";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import {
 	Form,
 	FormControl,
@@ -19,7 +20,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function InitWalletPage() {
 	const { data: user, isLoading: isUserLoading } = useUser();
-	const { form, onSubmit, isPending } = useInitWallet(user?.id || "");
+	const { 
+		form, 
+		onSubmit, 
+		isPending, 
+		emergencyContacts,
+		updateContactEmail,
+		updateContactName 
+	} = useInitWallet(user?.id || "");
 
 	if (isUserLoading) {
 		return (
@@ -85,78 +93,115 @@ export default function InitWalletPage() {
 									<FormMessage />
 								</FormItem>
 							)}
-						/>
+					/>
 
-						{/* Daily Limit field with slider-in-box style but matching auth theme */}
-						<FormField
-							control={form.control}
-							name="dailyLimit"
-							render={({ field }) => (
-								<FormItem className="space-y-3 px-1 pt-6">
-                           <div className="">
-                              <div className="flex items-center justify-between">
-                                 <FormLabel className="text-sm font-semibold text-muted-foreground">
-                                    Daily Limit (USD)
-                                 </FormLabel>
-                                 <span className="text-sm font-bold text-violet-600">
-                                    ${field.value.toLocaleString()}
-                                 </span>
-                              </div>
-                              <span className="text-xs text-muted-foreground">Set slider to 0 for no limit</span>
-                           </div>
-									<FormControl>
-										<div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-											<div className="flex items-center gap-3">
-												<Banknote className="h-5 w-5 text-muted-foreground" />
-												<Slider
-													min={0}
-													max={5000}
-													step={50}
-													value={[field.value]}
-													onValueChange={(val) => field.onChange(val[0])}
-													className="flex-1"
-													disabled={isPending}
-												/>
-											</div>
-											<Input
-												type="number"
-												className="h-9 border-none bg-gray-50 text-center font-mono font-bold focus-visible:ring-0"
-												{...field}
-												onChange={(e) => field.onChange(Number(e.target.value))}
+					{/* Daily Limit field with slider-in-box style but matching auth theme */}
+					<FormField
+						control={form.control}
+						name="dailyLimit"
+						render={({ field }) => (
+							<FormItem className="space-y-3 px-1 pt-6">
+								<div className="">
+									<div className="flex items-center justify-between">
+										<FormLabel className="text-sm font-semibold text-muted-foreground">
+											Daily Limit (USD)
+										</FormLabel>
+										<span className="text-sm font-bold text-violet-600">
+											${field.value.toLocaleString()}
+										</span>
+									</div>
+									<span className="text-xs text-muted-foreground">Set slider to 0 for no limit</span>
+								</div>
+								<FormControl>
+									<div className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+										<div className="flex items-center gap-3">
+											<Banknote className="h-5 w-5 text-muted-foreground" />
+											<Slider
+												min={0}
+												max={5000}
+												step={50}
+												value={[field.value]}
+												onValueChange={(val) => field.onChange(val[0])}
+												className="flex-1"
 												disabled={isPending}
 											/>
 										</div>
-									</FormControl>
-									<FormDescription className="text-[10px] leading-tight text-muted-foreground">
-										Over-limit transfers will require emergency contact approval.
-									</FormDescription>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+										<Input
+											type="number"
+											className="h-9 border-none bg-gray-50 text-center font-mono font-bold focus-visible:ring-0"
+											{...field}
+											onChange={(e) => field.onChange(Number(e.target.value))}
+											disabled={isPending}
+										/>
+									</div>
+								</FormControl>
+								<FormDescription className="text-[10px] leading-tight text-muted-foreground">
+									Over-limit transfers will require emergency contact approval.
+								</FormDescription>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 
-						{/* Emergency Email field with icon */}
-						<FormField
-							control={form.control}
-							name="emergencyEmail"
-							render={({ field }) => (
-								<FormItem>
-									<FormControl>
-										<div className="relative">
-											<Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-											<Input
-												type="email"
-												placeholder="Emergency Email"
-												disabled={isPending}
-												className="h-12 rounded-full border-gray-200 bg-white pl-12 shadow-sm"
-												{...field}
-											/>
-										</div>
-									</FormControl>
-									<FormMessage />
-								</FormItem>
-							)}
-						/>
+					{/* Emergency Contacts Section */}
+					<div className="space-y-3 px-1 pt-4">
+						<FormLabel className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+							<Mail className="h-4 w-4" />
+							Emergency Contacts (Required: 2)
+						</FormLabel>
+						
+						<p className="text-[10px] leading-tight text-muted-foreground mb-3">
+							Emergency contacts approve expenses when you exceed your daily limit. <strong>Exactly 2 contacts are required.</strong>
+						</p>
+
+						{/* Contact 1 */}
+						<Card className="p-3 space-y-2">
+							<p className="text-xs font-medium text-muted-foreground">Contact 1</p>
+							<Input
+								type="email"
+								placeholder="Emergency email *"
+								value={emergencyContacts?.[0]?.email || ""}
+								onChange={(e) => updateContactEmail(0, e.target.value)}
+								disabled={isPending}
+								className="h-10"
+							/>
+							<Input
+								type="text"
+								placeholder="Name (optional)"
+								value={emergencyContacts?.[0]?.name || ""}
+								onChange={(e) => updateContactName(0, e.target.value)}
+								disabled={isPending}
+								className="h-10"
+							/>
+						</Card>
+
+						{/* Contact 2 */}
+						<Card className="p-3 space-y-2">
+							<p className="text-xs font-medium text-muted-foreground">Contact 2</p>
+							<Input
+								type="email"
+								placeholder="Emergency email *"
+								value={emergencyContacts?.[1]?.email || ""}
+								onChange={(e) => updateContactEmail(1, e.target.value)}
+								disabled={isPending}
+								className="h-10"
+							/>
+							<Input
+								type="text"
+								placeholder="Name (optional)"
+								value={emergencyContacts?.[1]?.name || ""}
+								onChange={(e) => updateContactName(1, e.target.value)}
+								disabled={isPending}
+								className="h-10"
+							/>
+						</Card>
+
+						{form.formState.errors.emergencyContacts && (
+							<p className="text-xs text-destructive">
+								{form.formState.errors.emergencyContacts.message}
+							</p>
+						)}
+					</div>
 
 						{/* Info note */}
 						<div className="flex items-start gap-2 px-1 py-1">

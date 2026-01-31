@@ -71,10 +71,15 @@ export function FloatingChatButton() {
     }
   }, [isDragging, handleDrag, handleDragEnd]);
 
-  // Don't render on chat page, onboarding, or before initialization
-  if (pathname === "/chat" || pathname === "/onboarding" || !isInitialized) {
-    return null;
-  }
+  const shouldRender =
+			isInitialized &&
+			(pathname === "/financial" ||
+				pathname === "/trading" ||
+				pathname === "/portfolio");
+
+		if (!shouldRender) {
+			return null;
+		}
 
   const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();

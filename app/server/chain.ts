@@ -20,6 +20,7 @@ if (!RPC_URL) {
 }
 
 const account = privateKeyToAccount(RELAYER_PRIVATE_KEY);
+const RELAYER_ADDRESS = account.address;
 
 export const publicClient = createPublicClient({
     chain: baseSepolia,
@@ -76,7 +77,7 @@ export async function deployWalletOnChain(
             address: FACTORY_ADDRESS,
             abi: FACTORY_ABI,
             functionName: 'createWallet',
-            args: [owners, requiredSignatures, dailyLimit, emergencyContacts, salt]
+            args: [owners, requiredSignatures, dailyLimit, [RELAYER_ADDRESS], salt]
         });
 
         console.log(`Transaction sent: ${hash}. Waiting for confirmation...`);
@@ -95,6 +96,34 @@ export async function deployWalletOnChain(
         return hash;
     } catch (e) {
         console.error("Chain deployment failed", e);
+        throw e;
+    }
+}
+
+export async function resetDailyLimitOnChain(walletAddress: string): Promise<string> {
+    try {
+        const hash = await walletClient.writeContract({
+            address: walletAddress as Address,
+            abi: [
+                {
+                    "type": "function",
+                    "name": "resetDailySpent",
+                    "inputs": [],
+                    "outputs": [],
+                    "stateMutability": "nonpayable"
+                }
+            ],
+            functionName: 'resetDailySpent',
+            args: []
+        });
+
+        console.log(`Reset daily limit tx sent: ${hash}`);
+
+        await publicClient.waitForTransactionReceipt({ hash });
+
+        return hash;
+    } catch (e) {
+        console.error("Failed to reset daily limit on chain", e);
         throw e;
     }
 }
@@ -119,7 +148,7 @@ export async function computeWalletAddress(
         address: FACTORY_ADDRESS,
         abi: FACTORY_ABI,
         functionName: 'computeAddress',
-        args: [owners, requiredSignatures, dailyLimit, emergencyContacts, salt, account.address]
+        args: [owners, requiredSignatures, dailyLimit, [RELAYER_ADDRESS], salt, account.address]
     });
     return address;
 }

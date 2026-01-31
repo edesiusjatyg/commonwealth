@@ -31,9 +31,9 @@ export const formatBalance = (
 		withoutCurrencySymbol?: boolean;
 	},
 ) => {
-	return balance.toLocaleString("id-ID", {
+	return balance.toLocaleString("en-US", {
 		style: options?.withoutCurrencySymbol ? "decimal" : "currency",
-		currency: "IDR",
+		currency: "USD",
 	});
 };
 

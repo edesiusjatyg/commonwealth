@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import * as rpc from "@/rpc";
 import { useTransition } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Login form schema
 const loginFormSchema = z.object({
@@ -18,6 +19,7 @@ export type LoginFormData = z.infer<typeof loginFormSchema>;
 
 export function useLoginForm() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const searchParams = useSearchParams();
 	const [isPending, startTransition] = useTransition();
 
@@ -45,19 +47,29 @@ export function useLoginForm() {
 
 				toast.success("Login successful");
 				
-				// Check for redirect parameter from middleware
-				const redirectTo = searchParams.get("redirect");
-
-				if (redirectTo) {
-					// Redirect to the original protected route they tried to access
-					router.push(redirectTo);
+				// // CRITICAL: Pre-populate the user cache with data from login response
+				// // This prevents the race condition where the cookie hasn't propagated yet
+				// if (response.userId) {
+				// 	queryClient.setQueryData(["user"], {
+				// 		id: response.userId,
+				// 		email: data.email,
+				// 		onboarded: response.onboarded ?? false,
+				// 	});
+				// }
+				
+				// // Force a refetch after a delay to sync with server
+				// setTimeout(() => {
+				// 	queryClient.invalidateQueries({ queryKey: ["user"] });
+				// }, 500);
+				
+				// Redirect based on onboarding status
+				if (response.onboarded) {
+					// router.push("/home");
+               router.replace("/home")
+               router.refresh();
 				} else {
-					// Default redirect based on onboarding status
-					if (response.onboarded) {
-						router.push("/home");
-					} else {
-						router.push("/onboarding");
-					}
+               router.replace("/onboarding");
+               router.refresh();
 				}
 			})();
 		});

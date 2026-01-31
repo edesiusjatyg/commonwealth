@@ -6,7 +6,7 @@ import { AuthResponse } from "@/types";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { generateAccount } from "./chain";
-
+import { encrypt } from "@/lib/crypto";
 
 
 // Input schemas
@@ -141,6 +141,7 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 		const passwordHash = await bcrypt.hash(password, 10);
 
 		const { privateKey, address: eoaAddress } = generateAccount();
+		const encryptedKey = encrypt(privateKey);
 
 		const user = await prisma.user.create({
 			data: {
@@ -148,9 +149,12 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 				passwordHash,
 				baseSocialId,
 				eoaAddress,
-				encryptedKey: privateKey, // In prod, encrypt this!
+				encryptedKey: encryptedKey,
 			},
 		});
+
+		// Set encrypted session cookie
+		await setSessionCookie(user.id);
 
 		return {
 			message: "User registered successfully",
@@ -170,7 +174,12 @@ export async function register(input: RegisterInput): Promise<AuthResponse> {
 export async function getCurrentUser(): Promise<{ id: string; email: string | null; onboarded: boolean } | null> {
 	try {
 		const userId = await getCurrentUserId();
-		if (!userId) return null;
+		if (!userId) {
+			console.warn("[getCurrentUser] Current userId is missing:", userId);
+			return null;
+		}
+
+		console.log("[getCurrentUser] Found userId:", userId);
 
 		const user = await prisma.user.findUnique({
 			where: { id: userId },
@@ -181,9 +190,22 @@ export async function getCurrentUser(): Promise<{ id: string; email: string | nu
 			},
 		});
 
+		if (user) {
+			console.log("[getCurrentUser] User found:", {
+				id: user.id,
+				email: user.email,
+				onboarded: user.onboarded,
+			});
+		} else {
+			console.warn(
+				"[getCurrentUser] No user found in database for userId:",
+				userId,
+			);
+		}
+
 		return user;
 	} catch (error) {
-		console.error("Get current user error:", error);
+		console.error("[getCurrentUser] Error:", error);
 		return null;
 	}
 }
