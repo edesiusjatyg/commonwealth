@@ -1,7 +1,9 @@
 # CommonWealth
 
 <div align="center">
-  <img src="public/logo.png" alt="CommonWealth Logo" width="120" />
+  <br />
+  <br />
+  <img src="public/logo.png" alt="CommonWealth Logo" width="180" />
   <br />
   <br />
 
