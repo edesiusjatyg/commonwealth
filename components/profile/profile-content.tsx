@@ -1,14 +1,31 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useRouter } from "next/navigation";
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+	CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, Mail, User, Shield, Wallet, AlertCircle } from "lucide-react";
+import {
+	Loader2,
+	Mail,
+	User,
+	Shield,
+	Wallet,
+	AlertCircle,
+	LogOut,
+} from "lucide-react";
 import { useUpdateProfile, type Profile } from "@/hooks/use-profile";
 import { EmergencyContactsManager } from "./emergency-contacts-manager";
+import * as rpc from '@/rpc';
+import { toast } from "sonner";
 
 interface ProfileContentProps {
 	profile: Profile;
@@ -16,9 +33,11 @@ interface ProfileContentProps {
 }
 
 export function ProfileContent({ profile, walletId }: ProfileContentProps) {
+	const router = useRouter();
 	const [nickname, setNickname] = useState(profile.nickname);
 	const [dailyLimit, setDailyLimit] = useState(profile.dailyLimit.toString());
 	const [hasChanges, setHasChanges] = useState(false);
+	const [isLoggingOut, setIsLoggingOut] = useState(false);
 
 	const updateProfile = useUpdateProfile();
 
@@ -40,6 +59,22 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 					? Number(dailyLimit)
 					: undefined,
 		});
+	};
+
+	const handleLogout = async () => {
+		if (confirm("Are you sure you want to logout?")) {
+			setIsLoggingOut(true);
+			try {
+				await rpc.logoutUser();
+				toast.success("Logged out successfully");
+				router.push("/login");
+			} catch {
+				toast.error("Logout failed", {
+					description: "An unexpected error occurred",
+				});
+				setIsLoggingOut(false);
+			}
+		}
 	};
 
 	const formatCurrency = (value: string) => {
@@ -154,6 +189,7 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 						{hasChanges && (
 							<Alert>
 								<AlertCircle className="h-4 w-4" />
+								<AlertDescription>You have unsaved changes</AlertDescription>
 								<AlertDescription>You have unsaved changes</AlertDescription>
 							</Alert>
 						)}

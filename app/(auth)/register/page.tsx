@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useRegisterForm, passwordRequirements } from "@/hooks/use-register-form";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, User, Mail, Lock, Eye, EyeOff, Check, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function RegisterPage() {
 	const [showPassword, setShowPassword] = useState(false);
@@ -28,6 +30,16 @@ export default function RegisterPage() {
 		passwordsMatch,
 		allRequirementsMet,
 	} = useRegisterForm();
+	const searchParams = useSearchParams();
+
+	// Show warning toast if user is already authenticated
+	useEffect(() => {
+		if (searchParams.get("toast") === "already-authenticated") {
+			toast.warning("Already Logged In", {
+				description: "You are already authenticated. Redirected to home.",
+			});
+		}
+	}, [searchParams]);
    
 	return (
 		<main className="relative flex min-h-screen flex-col items-center bg-gradient-to-b from-indigo-50/50 via-white to-pink-50/50 px-6 py-12 overflow-hidden">

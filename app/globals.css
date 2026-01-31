@@ -222,3 +222,7 @@ body {
       }
    }
 }
+
+[data-description] {
+   color: var(--text-secondary-foreground) !important;
+}

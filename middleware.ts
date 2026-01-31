@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { getCurrentUserId } from "@/lib/session";
 
-// Protected routes that require authentication
-const PROTECTED_ROUTES = [
-	"/actions/**",
+// Routes that require authentication
+const protectedRoutes = [
+	"/actions",
 	"/init-wallet",
 	"/notifications",
 	"/chat",
@@ -15,54 +16,59 @@ const PROTECTED_ROUTES = [
 	"/financial",
 ];
 
-/**
- * Middleware to protect routes and redirect unauthenticated users to login
- */
-export function middleware(request: NextRequest) {
+// Routes that should NOT be accessible when authenticated
+const authRoutes = ["/login", "/register", "/login-with-base"];
+
+export async function middleware(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
-	// Check if the route is protected
-	const isProtectedRoute = PROTECTED_ROUTES.some((route) => {
-		if (route.endsWith("/**")) {
-			const baseRoute = route.replace("/**", "");
-			return pathname.startsWith(baseRoute);
-		}
-		return pathname === route || pathname.startsWith(`${route}/`);
-	});
-
-	// If not a protected route, allow access
-	if (!isProtectedRoute) {
+	// Skip middleware for static assets and API routes
+	if (
+		pathname.startsWith("/_next") ||
+		pathname.startsWith("/api") ||
+		pathname.includes(".")
+	) {
 		return NextResponse.next();
 	}
 
-	// Check for authentication - looking for session cookie
-	const sessionCookie = request.cookies.get("session");
+	// Get current user session
+	const userId = await getCurrentUserId();
+	const isAuthenticated = !!userId;
 
-	// If no session cookie, redirect to login
-	if (!sessionCookie) {
-		const loginUrl = new URL("/login", request.url);
-		// Add redirect parameter to return user after login
-		loginUrl.searchParams.set("redirect", pathname);
-		return NextResponse.redirect(loginUrl);
+	// Check if user is trying to access auth routes while authenticated
+	const isAuthRoute = authRoutes.some((route) => pathname.startsWith(route));
+	if (isAuthRoute && isAuthenticated) {
+		// Redirect to home with a warning toast parameter
+		const url = request.nextUrl.clone();
+		url.pathname = "/home";
+		url.searchParams.set("toast", "already-authenticated");
+		return NextResponse.redirect(url);
 	}
 
-	// User is authenticated, allow access
+	// Check if user is trying to access protected routes without authentication
+	const isProtectedRoute = protectedRoutes.some((route) =>
+		pathname.startsWith(route),
+	);
+	if (isProtectedRoute && !isAuthenticated) {
+		// Redirect to login with the original path as redirect parameter
+		const url = request.nextUrl.clone();
+		url.pathname = "/login";
+		url.searchParams.set("redirect", pathname);
+		return NextResponse.redirect(url);
+	}
+
 	return NextResponse.next();
 }
 
-/**
- * Configure which routes this middleware should run on
- */
 export const config = {
 	matcher: [
 		/*
 		 * Match all request paths except for the ones starting with:
-		 * - api (API routes)
 		 * - _next/static (static files)
 		 * - _next/image (image optimization files)
 		 * - favicon.ico (favicon file)
 		 * - public folder
 		 */
-		"/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+		"/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
 	],
 };
