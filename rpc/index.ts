@@ -370,12 +370,13 @@ export type EmergencyContact = {
 export type SetupWalletInput = {
 	userId: string;
 	name: string;
-	emergencyContacts: EmergencyContact[]; // REQUIRED: Exactly 2 contacts
-	emergencyEmail?: string; // DEPRECATED: Keep for backward compatibility
+	emergencyEmail?: string | string[];
 	dailyLimit: number;
 };
 
-export const setupWallet = async (input: SetupWalletInput): Promise<WalletResponse> => {
+export const setupWallet = async (
+	input: SetupWalletInput,
+): Promise<WalletResponse> => {
 	return await createWallet(input);
 };
 

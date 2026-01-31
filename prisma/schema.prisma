@@ -23,30 +23,19 @@ model User {
 }
 
 model Wallet {
-  id                 String              @id @default(cuid())
-  address            String              @unique
-  name               String
-  userId             String
-  dailyLimit         Decimal             @default(0)
-  emergencyEmail     String?             // @deprecated - use emergencyContacts relation
-  spendingToday      Decimal             @default(0)
-  createdAt          DateTime            @default(now())
-  transactions       Transaction[]
-  user               User                @relation(fields: [userId], references: [id])
-  yieldHistory       YieldHistory[]
-  emergencyContacts  EmergencyContact[]  // NEW: Multiple emergency contacts
-}
-
-model EmergencyContact {
-  id        String   @id @default(cuid())
-  walletId  String
-  email     String
-  name      String?  // Optional display name
-  createdAt DateTime @default(now())
-  wallet    Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  
-  @@unique([walletId, email]) // Prevent duplicate emails per wallet
-  @@index([walletId])
+  id             String         @id @default(cuid())
+  address        String         @unique
+  name           String
+  userId         String
+  dailyLimit     Decimal        @default(0)
+  emergencyEmail String[]
+  spendingToday  Decimal        @default(0)
+  approvalTokenHash String?
+  approvalExpiresAt DateTime?
+  createdAt      DateTime       @default(now())
+  transactions   Transaction[]
+  user           User           @relation(fields: [userId], references: [id])
+  yieldHistory   YieldHistory[]
 }
 
 model Transaction {
