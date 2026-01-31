@@ -21,6 +21,7 @@ import {
 	Wallet,
 	AlertCircle,
 	LogOut,
+	Copy,
 } from "lucide-react";
 import { useUpdateProfile, type Profile } from "@/hooks/use-profile";
 import { EmergencyContactsManager } from "./emergency-contacts-manager";
@@ -38,6 +39,7 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 	const [dailyLimit, setDailyLimit] = useState(profile.dailyLimit.toString());
 	const [hasChanges, setHasChanges] = useState(false);
 	const [isLoggingOut, setIsLoggingOut] = useState(false);
+   const [copied, setCopied] = useState(false);
 
 	const updateProfile = useUpdateProfile();
 
@@ -61,21 +63,38 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 		});
 	};
 
-	const handleLogout = async () => {
-		if (confirm("Are you sure you want to logout?")) {
-			setIsLoggingOut(true);
-			try {
-				await rpc.logoutUser();
-				toast.success("Logged out successfully");
-				router.push("/login");
-			} catch {
-				toast.error("Logout failed", {
-					description: "An unexpected error occurred",
+   const handleLogout = () => {
+				const mutate = async () => {
+					setIsLoggingOut(true);
+					try {
+						await rpc.logoutUser();
+						toast.success("Logged out successfully");
+						router.push("/login");
+					} catch {
+						toast.error("Logout failed", {
+							description: "An unexpected error occurred",
+						});
+						setIsLoggingOut(false);
+					}
+				};
+
+				toast("Are you sure you want to logout?", {
+					position: "bottom-center",
+					actionButtonStyle: {
+						backgroundColor: "var(--destructive)",
+					},
+					action: {
+						label: "Yes, logout",
+						onClick: mutate,
+					},
+					cancel: {
+						label: "No",
+						onClick: () => {
+							/* optional: do nothing */
+						},
+					},
 				});
-				setIsLoggingOut(false);
-			}
-		}
-	};
+			};
 
 	const formatCurrency = (value: string) => {
 		const num = value.replace(/\D/g, "");
@@ -86,6 +105,28 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 		const raw = e.target.value.replace(/\D/g, "");
 		setDailyLimit(raw);
 	};
+
+	const handleCopy = async (address: string) => {
+		try {
+			await navigator.clipboard.writeText(address);
+			setCopied(true);
+			toast.success("Address copied to clipboard");
+			setTimeout(() => setCopied(false), 2000);
+		} catch {
+			toast.error("Failed to copy address");
+		}
+	};
+
+	const CopyButton = () => (
+		<Button
+			className="size-icon ml-2 p-0 opacity-70 hover:opacity-100"
+			variant={"ghost"}
+			size={"icon-sm"}
+			onClick={() => handleCopy(profile.walletAddress)}
+		>
+			<Copy />
+		</Button>
+	);
 
 	return (
 		<div className="container flex flex-col gap-6 py-6">
@@ -105,12 +146,12 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 					</div>
 					<div className="flex flex-col">
 						<span className="text-sm text-muted-foreground">
-							Wallet Address
+							Wallet Address{" "}
 						</span>
 						<span className="font-mono text-sm font-medium overflow-elipsis max-w-xs">
 							{profile.walletAddress.slice(0, 6)}...
 							{profile.walletAddress.slice(-4)}
-							{/* {profile.walletAddress} */}
+							{/* {profile.walletAddress} */} <CopyButton />
 						</span>
 					</div>
 				</CardContent>
@@ -215,6 +256,15 @@ export function ProfileContent({ profile, walletId }: ProfileContentProps) {
 
 			{/* Emergency Contacts Manager */}
 			<EmergencyContactsManager />
+			<Button
+				onClick={handleLogout}
+				variant="destructive"
+				className="w-full mt-4 mb-10"
+				disabled={isLoggingOut}
+			>
+				Logout
+			</Button>
+			<div className="min-h-10" />
 		</div>
 	);
 }
