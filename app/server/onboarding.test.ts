@@ -19,7 +19,7 @@ describe('Onboarding Server Actions', () => {
         it('should return static steps', async () => {
             const result = await getOnboardingSteps();
             expect(result.steps).toHaveLength(3);
-            expect(result.steps[0].title).toBe('Welcome to Blackwallet');
+            expect(result.steps[0].title).toBe('Welcome to CommonWealth');
         });
     });
 

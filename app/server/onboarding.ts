@@ -8,11 +8,11 @@ import { prisma } from "@/lib/prisma";
  */
 export async function getOnboardingSteps(): Promise<OnboardingResponse> {
 	console.info("[onboarding.getOnboardingSteps] Fetching onboarding steps");
-	
+
 	const onboardingSteps: OnboardingStep[] = [
 		{
 			id: 1,
-			title: "Welcome to Blackwallet",
+			title: "Welcome to CommonWealth",
 			description: "The most secure AI-powered DeFi wallet on Base L2.",
 			image: "/onboarding/welcome.png",
 		},
@@ -32,15 +32,15 @@ export async function getOnboardingSteps(): Promise<OnboardingResponse> {
 		},
 	];
 
-	console.info("[onboarding.getOnboardingSteps] Steps fetched", { 
-		count: onboardingSteps.length 
+	console.info("[onboarding.getOnboardingSteps] Steps fetched", {
+		count: onboardingSteps.length
 	});
 	return { steps: onboardingSteps };
 }
 
 export async function completeOnboarding(userId: string): Promise<boolean> {
 	console.info("[onboarding.completeOnboarding] Marking user as onboarded", { userId });
-	
+
 	try {
 		const result = await prisma.user.update({
 			where: { id: userId },

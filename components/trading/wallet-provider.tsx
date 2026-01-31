@@ -27,7 +27,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   // Initialize Coinbase Wallet SDK
   useEffect(() => {
     const coinbaseWallet = new CoinbaseWalletSDK({
-      appName: 'BlackWallet Trading',
+      appName: 'CommonWealth Trading',
       appLogoUrl: '/logo.png', // Use your app's logo
       darkMode: true,
     });
@@ -60,7 +60,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
         if (accountsList.length > 0) {
           setAddress(accountsList[0]);
           setIsConnected(true);
-          
+
           // Get chain ID
           ethereum.request({ method: 'eth_chainId' })
             .then((chainIdHex) => {

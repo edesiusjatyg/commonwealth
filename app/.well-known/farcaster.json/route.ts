@@ -23,6 +23,7 @@ export async function GET() {
          name: "CommonWealth",
          homeUrl: URL,
          iconUrl: URL + "/logo.png",
+         imageUrl: URL + "/showcase-1.jpeg",
          splashImageUrl: URL + "/logo.png",
          splashBackgroundColor: "#dedeff",
          webhookUrl: URL + "/api/webhook",

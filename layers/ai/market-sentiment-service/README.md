@@ -655,7 +655,7 @@ See `UPDATE_LOG/` directory for detailed version history and changes.
 
 ## License
 
-Proprietary - BlackWallet Project
+Proprietary - CommonWealth Project
 
 ## Support
 
