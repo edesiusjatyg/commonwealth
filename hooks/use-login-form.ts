@@ -19,8 +19,6 @@ export type LoginFormData = z.infer<typeof loginFormSchema>;
 
 export function useLoginForm() {
 	const router = useRouter();
-	const queryClient = useQueryClient();
-	const searchParams = useSearchParams();
 	const [isPending, startTransition] = useTransition();
 
 	const form = useForm<LoginFormData>({
