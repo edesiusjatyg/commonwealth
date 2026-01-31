@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     # Service URLs
     market_sentiment_service_url: str = os.getenv(
         "MARKET_SENTIMENT_SERVICE_URL", 
-        "http://localhost:8000"
+        "http://localhost:8001"
     )
     
     # LLM settings

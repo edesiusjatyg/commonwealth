@@ -9,16 +9,41 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-sentiment_user}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sentiment_pass}
     ports:
-      - "${POSTGRES_PORT:-5432}:5432"
+      - "5431:5432"
     volumes:
       - market-sentiment-pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sentiment_user}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-sentiment_user} -d ${POSTGRES_DB:-market_sentiment}"]
       interval: 5s
       timeout: 5s
       retries: 5
     restart: unless-stopped
+    networks:
+      - market-sentiment-network
+
+  market-sentiment-app:
+    build: .
+    container_name: market-sentiment-app
+    ports:
+      - "8001:8001"
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=${POSTGRES_DB:-market_sentiment}
+      - POSTGRES_USER=${POSTGRES_USER:-sentiment_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-sentiment_pass}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - market-sentiment-network
 
 volumes:
   market-sentiment-pgdata:
     name: market-sentiment-pgdata
+
+networks:
+  market-sentiment-network:
+    driver: bridge
