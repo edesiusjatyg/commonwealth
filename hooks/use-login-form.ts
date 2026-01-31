@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ export type LoginFormData = z.infer<typeof loginFormSchema>;
 export function useLoginForm() {
 	const router = useRouter();
 	const queryClient = useQueryClient();
+	const searchParams = useSearchParams();
 	const [isPending, startTransition] = useTransition();
 
 	const form = useForm<LoginFormData>({
