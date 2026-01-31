@@ -27,6 +27,11 @@ export function OnboardingFlow() {
     setSelectedIndex(emblaApi.selectedScrollSnap());
   }, [emblaApi]);
 
+  // prefetch for instant navigation 
+  useEffect(() => {
+    router.prefetch('/init-wallet');
+  }, [router]);
+
   useEffect(() => {
     if (!emblaApi) return;
     onSelect();
@@ -52,7 +57,7 @@ export function OnboardingFlow() {
     <div className="h-[100dvh] bg-white text-black flex flex-col relative overflow-hidden">
         
         {/* Main Content Area - Top 50% */}
-        <div className="h-[50%] flex flex-col w-full max-w-lg mx-auto z-10 px-6 pt-8 pb-2 relative">
+        <div className="min-h-[50%] flex flex-col w-full max-w-lg mx-auto z-10 px-6 py-2 pt-8 pb-2 relative">
             
             {/* Progress Dots */}
             <div className="flex justify-center gap-2 mb-2 shrink-0">
@@ -109,7 +114,7 @@ export function OnboardingFlow() {
         </div>
 
         {/* Buttons Layer - Positioned to bridge the gap or float on top of wave */}
-        <div className="absolute top-[48%] left-0 right-0 z-20 px-6 flex justify-center w-full">
+        <div className="top-[55%] left-0 right-0 z-20 px-6 py-3 flex justify-center w-full">
              <div className="flex gap-3 w-full max-w-xs">
                 {selectedIndex > 0 && (
                     <Button 
