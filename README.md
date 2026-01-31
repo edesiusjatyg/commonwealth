@@ -1,46 +1,54 @@
-# BlackWallet
+# CommonWealth
 
-[![Try Live App](https://img.shields.io/badge/Try_Live_App-commonwealth--beta.vercel.app-success?style=for-the-badge&logo=vercel)](https://commonwealth-beta.vercel.app)
-![License](https://img.shields.io/badge/license-Private-red?style=for-the-badge)
-![Next.js](https://img.shields.io/badge/Next.js-16.1-black?style=for-the-badge&logo=next.js)
-![Base](https://img.shields.io/badge/Base-Layer%202-blue?style=for-the-badge)
-![AI Powered](https://img.shields.io/badge/AI-Gemini%20Powered-orange?style=for-the-badge)
+<div align="center">
+  <img src="public/logo.png" alt="CommonWealth Logo" width="120" />
+  <br />
+  <br />
+
+  [![Try Live App](https://img.shields.io/badge/Try_Live_App-commonwealth--beta.vercel.app-success?style=for-the-badge&logo=vercel)](https://commonwealth-beta.vercel.app)
+  ![License](https://img.shields.io/badge/license-Private-red?style=for-the-badge)
+  ![Next.js](https://img.shields.io/badge/Next.js-16.1-black?style=for-the-badge&logo=next.js)
+  ![Base](https://img.shields.io/badge/Base-Layer%202-blue?style=for-the-badge)
+  ![AI Powered](https://img.shields.io/badge/AI-Gemini%20Powered-orange?style=for-the-badge)
+</div>
 
 **Access the platform now at [https://commonwealth-beta.vercel.app](https://commonwealth-beta.vercel.app)**
 
-BlackWallet is a next-generation financial platform built to empower you with clarity and control. By combining professional-grade tools with advanced AI insights, we help you navigate the digital asset landscape with confidence.
+CommonWealth is a next-generation financial platform built to empower you with clarity and control. By combining professional-grade tools with advanced AI insights, we help you navigate the digital asset landscape with confidence.
 
 ---
 
 ## Key Benefits
 
-### 📊 Financial Awareness
-Gain a comprehensive understanding of your portfolio. BlackWallet provides a unified view of your assets, helping you track performance and manage your financial health with precision on the Base network.
+### 🤖 A "Financial Copilot" for Crypto
+CommonWealth acts like a smart bank account for your digital assets. **The Oracle** doesn't just look at code; it looks at your *behavior*. It differentiates between a "swap" and a "coffee purchase", analyzes your net flow, and gives you actionable insights like "You've spent 20% more on gas fees this month."
 
-### 🛡️ Financial Safety
-Put yourself in a safe financial position. We prioritize security and self-custody, giving you full control over your assets while utilizing secure, decentralized protocols to protect your wealth.
+### 🏦 Bank-Grade Security with Self-Custody
+We solve the "what if I get hacked?" fear.
+-   **Daily Limits**: Set a daily spending cap (e.g., $1,000/day). Even if your key is stolen, your life savings can't be drained instantly.
+-   **Social Recovery (Emergency Contacts)**: Designate trusted contacts who can approve overriding these limits or help secure your account if compromised.
 
-### 🧠 Informed Investment Decisions
-Make moves based on data, not just intuition. Leveraged by Google Gemini AI, our platform provides real-time market sentiment analysis and intelligent insights, enabling you to make smarter, more informed investment choices.
+### 📈 An Investment Strategist in Your Pocket
+Remove the noise from trading.
+-   **Nostradamus**: Analyzes market sentiment for you, telling you if the "vibe" is bullish or bearish based on data, not hype.
+-   **Scribe**: A chat friend you can ask "What is a Layer 2?" or "Why did my transaction fail?" and get a plain English answer.
 
 ---
 
 ## Features
 
-### Advanced Trading & Management
-- **High-Speed Execution**: Fast, low-cost interactions on the Base Layer 2 network.
-- **Smart Optimization**: Efficient trade routing using top-tier protocols like 0x API and Uniswap V3.
-- **Professional Charting**: Interactive, real-time visual tools to analyze market trends effectively.
-- **Universal Connectivity**: Securely connect with trusted wallets including Coinbase Wallet and MetaMask.
+### Integrated Financial Health
+-   **Unified Dashboard**: A single view combining your daily spending ("checking") and investment portfolio.
+-   **Yield Tracking**: Track passive income separately from active trading gains.
 
-### AI-Powered Intelligence
-- **Market Sentinel**: Automated analysis of market trends to highlight potential opportunities and risks.
-- **Personalized Insights**: Tailored data to suit your trading behavior and goals.
-- **Smart Assistant**: An integrated AI companion to assist with market queries and platform support.
+### Smart Security
+-   **Daily Caps**: Configurable spending limits to control outflow.
+-   **Emergency Approvals**: A "human element" to decentralized security allowing trusted contacts to intervene in critical situations.
 
----
-
-## Technical Overview
+### AI Staff
+-   **The Oracle**: Your personal financial overseer. Keep a pulse on your current financial health, net worth, and spending patterns.
+-   **Nostradamus**: Your future-gazing strategist. Receive advanced market insights and comprehensive outlooks.
+-   **Scribe**: Your dedicated crypto companion. Chat freely and discuss complex topics in plain English.
 
 ---
 
@@ -73,7 +81,7 @@ Make moves based on data, not just intuition. Leveraged by Google Gemini AI, our
 The repository flows a monorepo-style structure:
 
 ```
-blackwallet/
+commonwealth/
 ├── app/                  # Next.js App Router Application
 ├── components/           # Reusable UI Components
 ├── layers/               # Microservices & Smart Contracts
