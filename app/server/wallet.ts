@@ -4,7 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { WalletResponse } from "@/types";
 import { getCurrentUserId } from "@/lib/session";
 import { z } from "zod";
-import { computeWalletAddress, deployWalletOnChain, resetDailyLimitOnChain } from "./chain";
+import {
+	computeWalletAddress,
+	deployWalletOnChain,
+	resetDailyLimitOnChain,
+} from "./chain";
 import { sendApprovalEmail } from "./email";
 import { Address } from "viem";
 import crypto from "crypto";
@@ -13,14 +17,16 @@ import crypto from "crypto";
 const createWalletSchema = z.object({
 	userId: z.string(),
 	name: z.string().min(1, "Wallet name is required"),
-	emergencyEmail: z.union([
-		z.string().email(),
-		z.array(z.string().email())
-	]).optional().transform(val => {
-		if (!val) return [];
-		return Array.isArray(val) ? val : [val];
-	})
-		.refine(val => val.length >= 1 && val.length <= 2, { message: "At least one and max 2 emergency contacts required" }),
+	emergencyEmail: z
+		.union([z.string().email(), z.array(z.string().email())])
+		.optional()
+		.transform((val) => {
+			if (!val) return [];
+			return Array.isArray(val) ? val : [val];
+		})
+		.refine((val) => val.length >= 1 && val.length <= 2, {
+			message: "At least one and max 2 emergency contacts required",
+		}),
 	dailyLimit: z.number().nonnegative().default(0),
 });
 
@@ -88,22 +94,7 @@ export async function createWallet(
 		// Prepare Contract Args
 		const owners: Address[] = [user.eoaAddress as Address];
 		const requiredSignatures = BigInt(1); // 1/1 for this MVP
-		const dailyLimitBI = BigInt(Math.floor(dailyLimit * 1e18)); // Assume input is plain number, contract uses wei 18 decimals
-		// Note: user input dailyLimit is number, we convert to wei if needed. 
-		// Schema has dailyLimit as number. Let's assume it's USD or Token units. 
-		// If USDT (6 decimals) or ETH (18). 
-		// Detailed requirements said "Deposit USDT". USDT is 6 decimals.
-		// "Daily Limit wallet". "Investasi BTC...".
-		// We'll assume standard 18 decimals for limit for simplicity or mapped to USDT.
-		// Let's use 18 decimals for now.
-		const emergencyContactAddr = (user.eoaAddress as Address); // Self as emergency for MVP, or null? Struct requires address.
-		// Requirement: "User dapat memasukkan email emergency contact".
-		// This implies the contact is off-chain (email) for approval process?
-		// And the system (relayer) acts as the on-chain enforcer/signer when approval is granted?
-		// OR the emergency contact has an address?
-		// "Sistem dapat memberi notifikasi status approval".
-		// For MVP, we pass the user itself or the relayer as the "Emergency Contact" on chain, 
-		// and the backend handles the email logic.
+		const dailyLimitBI = BigInt(Math.floor(dailyLimit * 1e18));
 
 		const salt = BigInt(Math.floor(Math.random() * 1000000));
 
@@ -111,28 +102,28 @@ export async function createWallet(
 			owners,
 			requiredSignatures,
 			dailyLimitBI,
-			[], // emergencyContacts handled in chain.ts via Relayer
-			salt
+			[],
+			salt,
 		);
 
 		await deployWalletOnChain(
 			owners,
 			requiredSignatures,
 			dailyLimitBI,
-			[], // emergencyContacts handled in chain.ts via Relayer
-			salt
+			[],
+			salt,
 		);
 
+		// Create wallet
 		const wallet = await prisma.wallet.create({
 			data: {
 				userId,
 				address: computedAddress,
 				name,
-				emergencyEmail,
+				emergencyEmail: emergencyEmail || [],
 				dailyLimit,
 			},
 		});
-
 		await prisma.user.update({
 			where: { id: userId },
 			data: { onboarded: true },
@@ -255,7 +246,9 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 		type TransactionType = (typeof wallet.transactions)[number];
 
 		const totalDeposits = wallet.transactions
-			.filter((t: TransactionType) => t.type === "DEPOSIT" || t.type === "YIELD")
+			.filter(
+				(t: TransactionType) => t.type === "DEPOSIT" || t.type === "YIELD",
+			)
 			.reduce((sum: number, t: TransactionType) => sum + Number(t.amount), 0);
 		const totalWithdrawals = wallet.transactions
 			.filter((t: TransactionType) => t.type === "WITHDRAWAL")
@@ -275,9 +268,9 @@ export async function withdraw(input: WithdrawInput): Promise<WalletResponse> {
 
 		if (spendingLimit > 0 && newSpendingToday > spendingLimit) {
 			return {
-				error:
-					"Daily limit exceeded.",
-				message: "Withdrawal failed, Daily limit exceeded. Please request approval from emergency contact.",
+				error: "Daily limit exceeded.",
+				message:
+					"Withdrawal failed, Daily limit exceeded. Please request approval from emergency contact.",
 			};
 		}
 
@@ -377,7 +370,10 @@ export async function approveDailyLimit(
 		}
 
 		// Verify token
-		const tokenHash = crypto.createHash("sha256").update(approvalCode).digest("hex");
+		const tokenHash = crypto
+			.createHash("sha256")
+			.update(approvalCode)
+			.digest("hex");
 		if (tokenHash !== wallet.approvalTokenHash) {
 			return {
 				error: "Invalid approval code",
@@ -394,7 +390,7 @@ export async function approveDailyLimit(
 			data: {
 				spendingToday: 0,
 				approvalTokenHash: null,
-				approvalExpiresAt: null
+				approvalExpiresAt: null,
 			},
 		});
 
@@ -424,7 +420,9 @@ export async function approveDailyLimit(
 /**
  * Request unlocking of daily limit
  */
-export async function requestDailyLimitUnlock(walletId: string): Promise<{ success: boolean; message: string }> {
+export async function requestDailyLimitUnlock(
+	walletId: string,
+): Promise<{ success: boolean; message: string }> {
 	try {
 		const wallet = await prisma.wallet.findUnique({
 			where: { id: walletId },
@@ -438,7 +436,10 @@ export async function requestDailyLimitUnlock(walletId: string): Promise<{ succe
 
 		// Generate secure token
 		const approvalToken = crypto.randomBytes(32).toString("hex");
-		const tokenHash = crypto.createHash("sha256").update(approvalToken).digest("hex");
+		const tokenHash = crypto
+			.createHash("sha256")
+			.update(approvalToken)
+			.digest("hex");
 		const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
 		// Save hash to DB
@@ -456,7 +457,10 @@ export async function requestDailyLimitUnlock(walletId: string): Promise<{ succe
 			await sendApprovalEmail(email, wallet.name, approvalLink);
 		}
 
-		return { success: true, message: "Approval request sent to emergency contacts" };
+		return {
+			success: true,
+			message: "Approval request sent to emergency contacts",
+		};
 	} catch (error) {
 		console.error("Request unlock error:", error);
 		return { success: false, message: "Failed to send request" };
@@ -537,14 +541,15 @@ const updateProfileSchema = z.object({
 	walletId: z.string().min(1, "Wallet ID is required"),
 	nickname: z.string().min(1).optional(),
 	dailyLimit: z.number().nonnegative().optional(),
-	emergencyEmail: z.union([
-		z.string().email(),
-		z.array(z.string().email())
-	]).optional().nullable().transform(val => {
-		if (val === null) return []; // Handle null as empty array
-		if (val === undefined) return undefined;
-		return Array.isArray(val) ? val : [val];
-	}),
+	emergencyEmail: z
+		.union([z.string().email(), z.array(z.string().email())])
+		.optional()
+		.nullable()
+		.transform((val) => {
+			if (val === null) return []; // Handle null as empty array
+			if (val === undefined) return undefined;
+			return Array.isArray(val) ? val : [val];
+		}),
 });
 
 // Profile input types
@@ -593,7 +598,9 @@ export async function getProfile(
 
 		const wallet = await prisma.wallet.findUnique({
 			where: { id: walletId },
-			include: { user: true },
+			include: {
+				user: true,
+			},
 		});
 
 		if (!wallet) {
@@ -611,7 +618,7 @@ export async function getProfile(
 			email: wallet.user.email || "",
 			nickname: wallet.name,
 			dailyLimit: Number(wallet.dailyLimit),
-			emergencyEmail: wallet.emergencyEmail,
+			emergencyEmail: wallet.emergencyEmail || [],
 			walletAddress: wallet.address,
 		};
 	} catch (error: any) {
@@ -704,7 +711,7 @@ export async function getRewardsHistory(walletId: string): Promise<any[]> {
 			where: { walletId },
 			orderBy: { timestamp: "desc" },
 		});
-		return history.map(h => ({
+		return history.map((h) => ({
 			id: h.id,
 			walletId: h.walletId,
 			amount: Number(h.amount),
@@ -727,7 +734,8 @@ export async function initiateTransfer(input: {
 	description?: string;
 }): Promise<WalletResponse> {
 	try {
-		const { walletId, destinationAddress, amount, category, description } = input;
+		const { walletId, destinationAddress, amount, category, description } =
+			input;
 
 		const wallet = await prisma.wallet.findUnique({
 			where: { id: walletId },
@@ -738,12 +746,14 @@ export async function initiateTransfer(input: {
 		}
 
 		// Calculate balance (simplified for this action)
-		const transactions = await prisma.transaction.findMany({ where: { walletId } });
+		const transactions = await prisma.transaction.findMany({
+			where: { walletId },
+		});
 		const totalDeposits = transactions
-			.filter(t => t.type === "DEPOSIT" || t.type === "YIELD")
+			.filter((t) => t.type === "DEPOSIT" || t.type === "YIELD")
 			.reduce((sum, t) => sum + Number(t.amount), 0);
 		const totalWithdrawals = transactions
-			.filter(t => t.type === "WITHDRAWAL")
+			.filter((t) => t.type === "WITHDRAWAL")
 			.reduce((sum, t) => sum + Number(t.amount), 0);
 		const balance = totalDeposits - totalWithdrawals;
 
@@ -785,10 +795,18 @@ export async function initiateTransfer(input: {
 /**
  * Get the current user's primary wallet
  */
-export async function getCurrentWallet(): Promise<{ id: string; address: string; name: string; dailyLimit: number; spendingToday: number } | null> {
+export async function getCurrentWallet(): Promise<{
+	id: string;
+	address: string;
+	name: string;
+	dailyLimit: number;
+	spendingToday: number;
+} | null> {
 	try {
 		const userId = await getCurrentUserId();
 		if (!userId) return null;
+
+      console.debug("Fetching wallet for userId:", userId);
 
 		const wallet = await prisma.wallet.findFirst({
 			where: { userId },
@@ -809,3 +827,9 @@ export async function getCurrentWallet(): Promise<{ id: string; address: string;
 		return null;
 	}
 }
+
+// ============================================
+// Emergency Contact Management (Simplified - Array-based)
+// ============================================
+// Emergency contacts are now stored as a simple string array in Wallet.emergencyEmail
+// Managed through updateProfile() function - no separate table needed

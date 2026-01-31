@@ -5,6 +5,7 @@ import { MiniAppSdk } from "./components/mini-app-sdk";
 import { Toaster } from "./components/ui/sonner";
 import { WalletProvider } from "@/components/trading/wallet-provider";
 import { PortfolioProvider } from "@/components/trading/portfolio-context";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
 const createQueryClient = () => new QueryClient();
 
@@ -24,6 +25,7 @@ export default function Providers({
 					{children}
 				</PortfolioProvider>
 			</WalletProvider>
+			<ReactQueryDevtools initialIsOpen={false} />
 		</QueryClientProvider>
 	);
 }

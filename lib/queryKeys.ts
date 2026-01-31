@@ -7,6 +7,7 @@ export const queryKeys = {
     balance: (walletId?: string) => ['wallet', 'balance', walletId] as const,
     transactions: (walletId?: string) => ['wallet', 'transactions', walletId] as const,
     dailySpending: (walletId?: string) => ['wallet', 'daily-spending', walletId] as const,
+    emergencyContacts: (walletId: string) => ['wallet', 'emergency-contacts', walletId] as const,
   },
   notifications: {
     all: ['notifications'] as const,

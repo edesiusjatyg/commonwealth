@@ -20,7 +20,7 @@ export default function Home() {
 				<WalletCard className="mt-[-60] md:mt-[-80] lg:mt-[-100]" />
 				<WalletActions className="mt-2" />
 				<WalletInsightCard className="w-full" />
-				<DailySpendingCard />
+				{/* <DailySpendingCard /> */}
 				<TopMarketValueCard />
 			</main>
 		</>

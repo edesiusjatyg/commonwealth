@@ -20,6 +20,7 @@ import {
 	getCurrentWallet,
 	getCurrentUser,
 	createWallet,
+	requestDailyLimitUnlock,
 } from "@/app/server";
 import type {
 	ProfileResponse as ServerProfileResponse,
@@ -358,6 +359,8 @@ export const fetchCurrentUser = async () => {
 	return await getCurrentUser();
 };
 
+// Emergency contact management removed - now handled via updateProfile with emergencyEmail array
+
 export type SetupWalletInput = {
 	userId: string;
 	name: string;
@@ -365,6 +368,12 @@ export type SetupWalletInput = {
 	dailyLimit: number;
 };
 
-export const setupWallet = async (input: SetupWalletInput): Promise<WalletResponse> => {
+export const setupWallet = async (
+	input: SetupWalletInput,
+): Promise<WalletResponse> => {
 	return await createWallet(input);
+};
+
+export const requestDailyLimitApproval = async (walletId: string) => {
+	return await requestDailyLimitUnlock(walletId);
 };

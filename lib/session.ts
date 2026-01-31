@@ -3,6 +3,11 @@ import { cookies } from "next/headers";
 
 const SESSION_SECRET = process.env.SESSION_SECRET || "development-secret-change-in-production";
 const COOKIE_NAME = "session";
+const IS_LOCAL_HTTP = process.env.IS_LOCAL_HTTP === "true";
+const IS_PROD = process.env.NODE_ENV === "production";
+
+console.log("[session.ts] IS_LOCAL_HTTP:", IS_LOCAL_HTTP);
+console.log("[session.ts] IS_PROD:", IS_PROD);
 
 // Derive a key from the secret
 const getSecretKey = () => new TextEncoder().encode(SESSION_SECRET);
@@ -39,13 +44,31 @@ export async function setSessionCookie(userId: string): Promise<void> {
 	const token = await encryptSession(userId);
 	const cookieStore = await cookies();
 
-	cookieStore.set(COOKIE_NAME, token, {
+	const cookieOptions = {
 		httpOnly: true,
-		secure: process.env.NODE_ENV === "production",
-		sameSite: "strict",
+		secure: IS_PROD && !IS_LOCAL_HTTP, // Secure in production over HTTPS, IS_LOCAL_HTTP allows for local testing
+		sameSite: "lax" as const, // "lax" allows cookies on navigation
 		maxAge: 60 * 60 * 24 * 7, // 1 week
 		path: "/",
-	});
+	};
+
+	console.log("[setSessionCookie] Setting cookie with options:", cookieOptions);
+	cookieStore.set(COOKIE_NAME, token, cookieOptions);
+
+	console.log("[setSessionCookie] Cookie set for userId:", userId);
+
+	// Verify the cookie was set by reading it back immediately
+	const verification = cookieStore.get(COOKIE_NAME);
+	if (verification) {
+		console.log(
+			"[setSessionCookie] ✓ Cookie verified in store, value length:",
+			verification.value.length,
+		);
+	} else {
+		console.error(
+			"[setSessionCookie] ✗ WARNING: Cookie not found after setting!",
+		);
+	}
 }
 
 /**
@@ -62,11 +85,34 @@ export async function clearSessionCookie(): Promise<void> {
  */
 export async function getCurrentUserId(): Promise<string | null> {
 	const cookieStore = await cookies();
+
+	// Debug: List all cookies
+	const allCookies = cookieStore.getAll();
+	console.log(
+		"[getCurrentUserId] All cookies:",
+		allCookies.map((c) => c.name),
+	);
+
 	const token = cookieStore.get(COOKIE_NAME)?.value;
 
 	if (!token) {
+		console.warn(
+			"[getCurrentUserId] No session cookie found. Looking for:",
+			COOKIE_NAME,
+		);
 		return null;
 	}
 
-	return await decryptSession(token);
+	console.log("[getCurrentUserId] Session cookie found, decrypting...");
+	const userId = await decryptSession(token);
+
+	if (userId) {
+		console.log("[getCurrentUserId] Session valid for userId:", userId);
+	} else {
+		console.warn(
+			"[getCurrentUserId] Session cookie found but failed to decrypt",
+		);
+	}
+
+	return userId;
 }

@@ -36,12 +36,13 @@ export function TopBarUserContainer() {
    if (!userQuery.isLoading && !userQuery.data) {
       router.push("/login");
    }
-   // if (!userQuery.data.onboarded) {
-   //    toast.warning("Please Complete Onboarding First", {
-   //       description: "To access your wallet, please complete onboarding.", 
-   //    })
-	// 	router.push("/onboarding");
-   // }
+
+   if (!userQuery.data.onboarded) {
+				toast.warning("Please Complete Onboarding First", {
+					description: "To access your wallet, please complete onboarding.",
+				});
+				router.push("/onboarding");
+			}
 
 	const displayName = userQuery.data.email?.split("@")[0] || "User";
 

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import * as rpc from "@/rpc";
 import { useTransition } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Password requirements for validation display
 export const passwordRequirements = [
@@ -37,6 +38,7 @@ export type RegisterFormData = z.infer<typeof registerFormSchema>;
 
 export function useRegisterForm() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [isPending, startTransition] = useTransition();
 
 	const form = useForm<RegisterFormData>({
@@ -86,9 +88,28 @@ export function useRegisterForm() {
 				}
 
 				toast.success("Registration successful", {
-					description: "Please login with your new account",
+					description: "Welcome! Setting up your account...",
 				});
-				router.push("/login");
+
+				if (response.userId) {
+					// CRITICAL: Pre-populate the user cache with data from register response
+					// This prevents the race condition where the cookie hasn't propagated yet
+					queryClient.setQueryData(["user"], {
+						id: response.userId,
+						email: data.email,
+						onboarded: false, // New users are never onboarded
+					});
+				}
+
+				// Force a refetch after a delay to sync with server
+				setTimeout(() => {
+					queryClient.invalidateQueries({ queryKey: ["user"] });
+				}, 500);
+
+				// Redirect to onboarding since they just registered
+				// router.push("/onboarding");
+				router.replace("/onboarding");
+				router.refresh();
 			})();
 		});
 	};
